@@ -78,13 +78,9 @@ async function handleCallback(code, res) {
         // 生成 JWT token
         const token = generateToken(user);
 
-        res.json({
-            success: true,
-            data: {
-                user: user,
-                token: token
-            }
-        });
+        // 重定向到管理界面并带上 token
+        const redirectUrl = `https://wx.thunis.com/admin/#/users?token=${token}`;
+        res.redirect(redirectUrl);
     } catch (error) {
         handleError(res, error, '授权回调处理失败');
     }
