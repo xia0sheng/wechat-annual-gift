@@ -4,16 +4,30 @@
       <div class="header-content">
         <div class="header-left">
           <h2>年会节目管理系统</h2>
-          <el-menu
-            v-if="isLoggedIn"
-            mode="horizontal"
-            :router="true"
-            :default-active="$route.path"
-          >
-            <el-menu-item index="/programs">节目列表</el-menu-item>
-            <el-menu-item v-if="isAdmin" index="/users">用户管理</el-menu-item>
-            <el-menu-item index="/profile">个人信息</el-menu-item>
-          </el-menu>
+          <div class="nav-menu" v-if="isLoggedIn">
+            <router-link 
+              to="/programs" 
+              class="nav-item"
+              :class="{ active: $route.path === '/programs' }"
+            >
+              节目列表
+            </router-link>
+            <router-link 
+              v-if="isAdmin" 
+              to="/users" 
+              class="nav-item"
+              :class="{ active: $route.path === '/users' }"
+            >
+              用户管理
+            </router-link>
+            <router-link 
+              to="/profile" 
+              class="nav-item"
+              :class="{ active: $route.path === '/profile' }"
+            >
+              个人信息
+            </router-link>
+          </div>
         </div>
         <el-button v-if="isLoggedIn" @click="logout" type="danger" size="small">
           退出登录
@@ -82,6 +96,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 0 20px;
 }
 
 .header-left {
@@ -94,22 +109,64 @@ export default {
   background-color: #409EFF;
   color: white;
   line-height: 60px;
+  padding: 0;
 }
 
-.el-menu {
-  border-bottom: none !important;
+.nav-menu {
+  display: flex;
+  gap: 20px;
 }
 
-.el-menu--horizontal > .el-menu-item {
-  border-bottom: none !important;
+.nav-item {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  padding: 0 15px;
+  font-size: 14px;
+  transition: all 0.3s;
 }
 
-.el-menu--horizontal > .el-menu-item {
-  color: white !important;
+.nav-item:hover {
+  color: white;
 }
 
-.el-menu--horizontal > .el-menu-item.is-active {
-  color: #ffd04b !important;
-  border-bottom-color: #ffd04b !important;
+.nav-item.active {
+  color: #ffd04b;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    padding: 10px;
+  }
+
+  .header-left {
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .nav-menu {
+    flex-direction: column;
+    width: 100%;
+    gap: 5px;
+  }
+
+  .nav-item {
+    display: block;
+    padding: 8px 15px;
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+
+  .el-header {
+    height: auto !important;
+    line-height: normal;
+  }
+
+  h2 {
+    margin: 10px 0;
+  }
 }
 </style> 

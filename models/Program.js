@@ -16,7 +16,7 @@ class Program {
     }
 
     static async findById(id) {
-        const [[program]] = await Promise.all([
+        const [[program], [gifts]] = await Promise.all([
             pool.query(
                 `SELECT 
                     p.*,
@@ -42,18 +42,6 @@ class Program {
         ]);
 
         if (!program) return null;
-
-        const [gifts] = await pool.query(
-            `SELECT 
-                rg.*,
-                u.nickname,
-                u.headimgurl
-            FROM rocket_gifts rg
-            JOIN users u ON rg.user_id = u.id
-            WHERE rg.program_id = ?
-            ORDER BY rg.created_at DESC`,
-            [id]
-        );
 
         return { ...program, gifts };
     }
