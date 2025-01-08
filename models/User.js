@@ -53,9 +53,11 @@ class User {
     }
 
     static async findAll(offset = 0, limit = 10) {
-        const [rows] = await pool.query(
+        const numOffset = Number(offset);
+        const numLimit = Number(limit);
+        const [rows] = await pool.execute(
             'SELECT * FROM users ORDER BY created_at DESC LIMIT ?, ?',
-            [parseInt(offset), parseInt(limit)]
+            [numOffset, numLimit]
         );
         return rows;
     }

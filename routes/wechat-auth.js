@@ -146,7 +146,7 @@ router.get('/', (req, res) => {
 router.get('/auth', (req, res) => {
     log('开始微信授权');
     const scope = 'snsapi_userinfo';
-    const callbackUrl = `${REDIRECT_URI}/wechat`;
+    const callbackUrl = REDIRECT_URI;
     log('回调 URL:', callbackUrl);
     const authUrl = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${APPID}&redirect_uri=${encodeURIComponent(callbackUrl)}&response_type=code&scope=${scope}&state=STATE#wechat_redirect`;
     log('重定向到:', authUrl);
