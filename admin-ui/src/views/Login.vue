@@ -32,16 +32,7 @@ export default {
     const router = useRouter()
 
     const handleWechatLogin = () => {
-      loading.value = true
-      try {
-        console.log('开始微信登录重定向...');
-        localStorage.setItem('redirect_url', window.location.href)
-        window.location.href = '/wechat/auth'
-      } catch (error) {
-        console.error('微信登录失败:', error);
-        loading.value = false;
-        ElMessage.error('登录失败，请重试');
-      }
+      window.location.href = 'https://wx.thunis.com/wechat/auth'
     }
 
     return {
