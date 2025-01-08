@@ -4,7 +4,13 @@ class Program {
     static async findAll() {
         const [rows] = await pool.query(`
             SELECT 
-                p.*,
+                p.id,
+                p.name,
+                p.description,
+                p.performers,
+                p.order_num,
+                p.created_at,
+                p.updated_at,
                 COALESCE(SUM(rg.rockets), 0) as total_rockets,
                 COUNT(DISTINCT rg.user_id) as gifters_count
             FROM programs p
@@ -20,7 +26,13 @@ class Program {
         const [[program], [gifts]] = await Promise.all([
             pool.query(
                 `SELECT 
-                    p.*,
+                    p.id,
+                    p.name,
+                    p.description,
+                    p.performers,
+                    p.order_num,
+                    p.created_at,
+                    p.updated_at,
                     COALESCE(SUM(rg.rockets), 0) as total_rockets,
                     COUNT(DISTINCT rg.user_id) as gifters_count
                 FROM programs p
