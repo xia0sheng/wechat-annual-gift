@@ -148,11 +148,18 @@ export default {
             description: response.data.data.description || '',
             performers: response.data.data.performers || '',
             order_num: response.data.data.order_num || 0,
-            total_rockets: response.data.data.total_rockets || 0,
-            gifters_count: response.data.data.gifters_count || 0,
+            total_rockets: parseInt(response.data.data.total_rockets) || 0,
+            gifters_count: parseInt(response.data.data.gifters_count) || 0,
             created_at: response.data.data.created_at,
             updated_at: response.data.data.updated_at,
-            gifts: response.data.data.gifts || []
+            gifts: (response.data.data.gifts || []).map(gift => ({
+              id: gift.id,
+              user_id: gift.user_id,
+              rockets: parseInt(gift.rockets) || 0,
+              created_at: gift.created_at,
+              nickname: gift.nickname || '',
+              headimgurl: gift.headimgurl || ''
+            }))
           }
           console.log('Processed program data:', program.value)
         } else {

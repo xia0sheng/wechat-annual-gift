@@ -86,9 +86,15 @@ class Program {
         if (!basicInfo) return null;
 
         const result = {
-            ...basicInfo,
-            total_rockets: parseInt(aggregateInfo.total_rockets) || 0,
-            gifters_count: parseInt(aggregateInfo.gifters_count) || 0,
+            id: basicInfo.id,
+            name: basicInfo.name || '',
+            description: basicInfo.description || '',
+            performers: basicInfo.performers || '',
+            order_num: basicInfo.order_num || 0,
+            created_at: basicInfo.created_at,
+            updated_at: basicInfo.updated_at,
+            total_rockets: parseInt(aggregateInfo[0]?.total_rockets) || 0,
+            gifters_count: parseInt(aggregateInfo[0]?.gifters_count) || 0,
             gifts: Array.isArray(gifts) ? gifts.map(gift => ({
                 id: gift.id,
                 user_id: gift.user_id,
