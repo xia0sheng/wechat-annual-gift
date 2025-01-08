@@ -6,8 +6,8 @@ const { authMiddleware } = require('./wechat-auth');
 // 获取用户列表（分页）
 router.get('/', authMiddleware, async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+        const page = Math.max(1, Number(req.query.page) || 1);
+        const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 10));
         const offset = (page - 1) * limit;
 
         // 获取总数和分页数据
