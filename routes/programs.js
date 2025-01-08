@@ -24,7 +24,9 @@ router.get('/', async (req, res) => {
 // 获取节目详情
 router.get('/:id', async (req, res) => {
     try {
+        console.log('Fetching program with ID:', req.params.id);
         const program = await Program.findById(req.params.id);
+        console.log('Found program:', program);
         if (!program) {
             return res.status(404).json({
                 success: false,

@@ -16,6 +16,7 @@ class Program {
     }
 
     static async findById(id) {
+        console.log('Finding program by ID:', id);
         const [[program], [gifts]] = await Promise.all([
             pool.query(
                 `SELECT 
@@ -41,12 +42,33 @@ class Program {
             )
         ]);
 
+        console.log('Raw program data:', program);
+        console.log('Raw gifts data:', gifts);
+
         if (!program) return null;
 
-        return { 
-            ...program,
-            gifts: Array.isArray(gifts) ? gifts : []
+        // 确保返回的是普通对象而不是 RowDataPacket
+        const result = {
+            id: program.id,
+            name: program.name,
+            description: program.description,
+            performers: program.performers,
+            order_num: program.order_num,
+            total_rockets: program.total_rockets,
+            gifters_count: program.gifters_count,
+            created_at: program.created_at,
+            updated_at: program.updated_at,
+            gifts: Array.isArray(gifts) ? gifts.map(gift => ({
+                id: gift.id,
+                user_id: gift.user_id,
+                rockets: gift.rockets,
+                created_at: gift.created_at,
+                nickname: gift.nickname,
+                headimgurl: gift.headimgurl
+            })) : []
         };
+        console.log('Processed result:', result);
+        return result;
     }
 
     static async create(data) {

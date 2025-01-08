@@ -19,6 +19,10 @@
       </template>
 
       <div v-if="program" class="program-info">
+        <!-- Debug info -->
+        <pre v-if="isAdmin" style="font-size: 12px; background: #f5f5f5; padding: 10px; margin-bottom: 20px;">
+          {{ JSON.stringify(program, null, 2) }}
+        </pre>
         <div class="info-section">
           <h3>基本信息</h3>
           <div class="info-item">
@@ -130,22 +134,25 @@ export default {
       loading.value = true
       try {
         const token = localStorage.getItem('token')
+        console.log('Fetching program with ID:', route.params.id)
         const response = await axios.get(`/programs/${route.params.id}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         })
+        console.log('Program response:', response.data)
         if (response.data.success && response.data.data) {
           program.value = {
             ...response.data.data,
             gifts: response.data.data.gifts || []
           }
+          console.log('Processed program data:', program.value)
         } else {
           ElMessage.error('获取节目信息失败')
         }
       } catch (error) {
-        ElMessage.error('获取节目信息失败')
-        console.error(error)
+        ElMessage.error(`获取节目信息失败: ${error.response?.data?.message || error.message}`)
+        console.error('Program fetch error:', error.response?.data || error)
       } finally {
         loading.value = false
       }
