@@ -68,7 +68,7 @@ export default {
       loading.value = true
       try {
         const token = localStorage.getItem('token')
-        const response = await axios.get(`/api/users`, {
+        const response = await axios.get(`/users`, {
           params: {
             page: currentPage.value,
             limit: pageSize.value
@@ -77,11 +77,12 @@ export default {
             Authorization: `Bearer ${token}`
           }
         })
+        console.log('用户列表响应:', response.data);
         users.value = response.data.data.users
         total.value = response.data.data.pagination.total
       } catch (error) {
-        ElMessage.error('获取用户列表失败')
-        console.error(error)
+        ElMessage.error(`获取用户列表失败: ${error.response?.data?.message || error.message}`)
+        console.error('获取用户列表错误:', error.response?.data || error)
       } finally {
         loading.value = false
       }

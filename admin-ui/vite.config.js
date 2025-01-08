@@ -6,10 +6,9 @@ export default defineConfig({
   base: '/admin/',
   server: {
     proxy: {
-      '/api': {
+      '/users': {
         target: 'https://wx.thunis.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
   }
