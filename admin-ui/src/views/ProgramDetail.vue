@@ -1,0 +1,269 @@
+<template>
+  <div class="program-detail">
+    <el-card v-loading="loading">
+      <template #header>
+        <div class="card-header">
+          <div class="header-left">
+            <el-button @click="$router.back()" icon="el-icon-back">返回</el-button>
+            <span class="title">节目详情</span>
+          </div>
+          <div class="header-right">
+            <el-button
+              type="success"
+              @click="handleGift"
+            >
+              赠送火箭
+            </el-button>
+          </div>
+        </div>
+      </template>
+
+      <div v-if="program" class="program-info">
+        <div class="info-section">
+          <h3>基本信息</h3>
+          <div class="info-item">
+            <label>节目名称：</label>
+            <span>{{ program.name }}</span>
+          </div>
+          <div class="info-item">
+            <label>表演者：</label>
+            <span>{{ program.performers }}</span>
+          </div>
+          <div class="info-item">
+            <label>节目描述：</label>
+            <span>{{ program.description || '暂无描述' }}</span>
+          </div>
+          <div class="info-item">
+            <label>显示顺序：</label>
+            <span>{{ program.order_num }}</span>
+          </div>
+          <div class="info-item">
+            <label>收到火箭：</label>
+            <span>{{ program.total_rockets || 0 }}</span>
+          </div>
+          <div class="info-item">
+            <label>赠送人数：</label>
+            <span>{{ program.gifters_count || 0 }}</span>
+          </div>
+        </div>
+
+        <div class="gifts-section">
+          <h3>火箭赠送记录</h3>
+          <el-table :data="program.gifts" style="width: 100%">
+            <el-table-column label="赠送者" width="200">
+              <template #default="scope">
+                <div class="user-info">
+                  <el-avatar :size="30" :src="scope.row.headimgurl" />
+                  <span>{{ scope.row.nickname }}</span>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="rockets" label="火箭数量" width="100" />
+            <el-table-column label="赠送时间" min-width="180">
+              <template #default="scope">
+                {{ formatDate(scope.row.created_at) }}
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </div>
+    </el-card>
+
+    <!-- 赠送火箭对话框 -->
+    <el-dialog
+      title="赠送火箭"
+      v-model="giftDialogVisible"
+      width="400px"
+    >
+      <el-form
+        :model="giftForm"
+        label-width="100px"
+        :rules="giftRules"
+        ref="giftFormRef"
+      >
+        <el-form-item label="火箭数量" prop="rockets">
+          <el-input-number
+            v-model="giftForm.rockets"
+            :min="1"
+            :max="userRockets"
+          />
+        </el-form-item>
+        <div class="rockets-info">
+          您当前拥有 {{ userRockets }} 个火箭
+        </div>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="giftDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleGiftSubmit">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import axios from 'axios'
+import { ElMessage } from 'element-plus'
+
+export default {
+  setup() {
+    const route = useRoute()
+    const router = useRouter()
+    const program = ref(null)
+    const loading = ref(false)
+    const giftDialogVisible = ref(false)
+    const giftFormRef = ref(null)
+    const userRockets = ref(0)
+
+    const giftForm = ref({
+      rockets: 1
+    })
+
+    const giftRules = {
+      rockets: [{ required: true, message: '请输入火箭数量', trigger: 'blur' }]
+    }
+
+    const fetchProgram = async () => {
+      loading.value = true
+      try {
+        const token = localStorage.getItem('token')
+        const response = await axios.get(`/programs/${route.params.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        program.value = response.data.data
+      } catch (error) {
+        ElMessage.error('获取节目详情失败')
+        console.error(error)
+      } finally {
+        loading.value = false
+      }
+    }
+
+    const fetchUserInfo = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        const response = await axios.get('/users/me', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        userRockets.value = response.data.data.rockets || 0
+      } catch (error) {
+        console.error(error)
+      }
+    }
+
+    const handleGift = () => {
+      giftForm.value = { rockets: 1 }
+      giftDialogVisible.value = true
+    }
+
+    const handleGiftSubmit = async () => {
+      if (!giftFormRef.value) return
+      await giftFormRef.value.validate(async (valid) => {
+        if (valid) {
+          try {
+            const token = localStorage.getItem('token')
+            await axios.post(`/programs/${route.params.id}/gift`, giftForm.value, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            ElMessage.success('赠送成功')
+            giftDialogVisible.value = false
+            fetchProgram()
+            fetchUserInfo()
+          } catch (error) {
+            ElMessage.error(error.response?.data?.message || '赠送失败')
+            console.error(error)
+          }
+        }
+      })
+    }
+
+    const formatDate = (date) => {
+      return new Date(date).toLocaleString()
+    }
+
+    onMounted(() => {
+      fetchProgram()
+      fetchUserInfo()
+    })
+
+    return {
+      program,
+      loading,
+      giftDialogVisible,
+      giftForm,
+      giftFormRef,
+      giftRules,
+      userRockets,
+      handleGift,
+      handleGiftSubmit,
+      formatDate
+    }
+  }
+}
+</script>
+
+<style scoped>
+.program-detail {
+  padding: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.program-info {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.info-section, .gifts-section {
+  margin-bottom: 20px;
+}
+
+.info-section h3, .gifts-section h3 {
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.info-item {
+  margin-bottom: 15px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.info-item label {
+  font-weight: bold;
+  width: 100px;
+  margin-right: 10px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rockets-info {
+  text-align: center;
+  color: #666;
+  margin-top: 10px;
+}
+</style> 

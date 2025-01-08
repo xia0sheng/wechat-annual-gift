@@ -31,9 +31,11 @@ app.use(express.urlencoded({ extended: true }));
 // 路由
 const { router: wechatAuthRouter } = require('./routes/wechat-auth');
 const usersRouter = require('./routes/users');
+const programsRouter = require('./routes/programs');
 
 app.use('/wechat', wechatAuthRouter);
 app.use('/users', usersRouter);
+app.use('/programs', programsRouter);
 
 app.get('/', (req, res) => {
     res.send('欢迎访问微信授权服务！请访问 /wechat/auth 开始授权。');

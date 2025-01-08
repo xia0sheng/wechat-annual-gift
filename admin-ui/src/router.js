@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import UserList from './views/UserList.vue'
 import Login from './views/Login.vue'
+import ProgramList from './views/ProgramList.vue'
+import ProgramDetail from './views/ProgramDetail.vue'
 
 const routes = [
   {
@@ -10,7 +12,7 @@ const routes = [
       if (!token) return '/login';
       try {
         const decoded = JSON.parse(atob(token.split('.')[1]));
-        return decoded.role === 'admin' ? '/users' : '/profile';
+        return decoded.role === 'admin' ? '/programs' : '/programs';
       } catch (e) {
         return '/login';
       }
@@ -28,6 +30,16 @@ const routes = [
   {
     path: '/profile',
     component: () => import('./views/Profile.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/programs',
+    component: ProgramList,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/programs/:id',
+    component: ProgramDetail,
     meta: { requiresAuth: true }
   }
 ]
