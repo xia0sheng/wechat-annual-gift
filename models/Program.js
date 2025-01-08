@@ -54,8 +54,8 @@ class Program {
             description: program.description,
             performers: program.performers,
             order_num: program.order_num,
-            total_rockets: program.total_rockets,
-            gifters_count: program.gifters_count,
+            total_rockets: parseInt(program.total_rockets) || 0,
+            gifters_count: parseInt(program.gifters_count) || 0,
             created_at: program.created_at,
             updated_at: program.updated_at,
             gifts: Array.isArray(gifts) ? gifts.map(gift => ({
@@ -67,7 +67,9 @@ class Program {
                 headimgurl: gift.headimgurl
             })) : []
         };
-        console.log('Processed result:', result);
+
+        // 调试输出
+        console.log('Final processed result:', JSON.stringify(result, null, 2));
         return result;
     }
 

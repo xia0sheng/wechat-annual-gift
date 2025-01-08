@@ -33,6 +33,10 @@ router.get('/:id', async (req, res) => {
                 message: '节目不存在'
             });
         }
+        console.log('Sending response:', JSON.stringify({
+            success: true,
+            data: program
+        }, null, 2));
         res.json({
             success: true,
             data: program

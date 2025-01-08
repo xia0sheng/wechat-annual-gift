@@ -143,7 +143,15 @@ export default {
         console.log('Program response:', response.data)
         if (response.data.success && response.data.data) {
           program.value = {
-            ...response.data.data,
+            id: response.data.data.id,
+            name: response.data.data.name || '',
+            description: response.data.data.description || '',
+            performers: response.data.data.performers || '',
+            order_num: response.data.data.order_num || 0,
+            total_rockets: response.data.data.total_rockets || 0,
+            gifters_count: response.data.data.gifters_count || 0,
+            created_at: response.data.data.created_at,
+            updated_at: response.data.data.updated_at,
             gifts: response.data.data.gifts || []
           }
           console.log('Processed program data:', program.value)
