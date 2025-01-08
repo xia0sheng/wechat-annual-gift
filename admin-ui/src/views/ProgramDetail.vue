@@ -23,11 +23,11 @@
           <h3>基本信息</h3>
           <div class="info-item">
             <label>节目名称：</label>
-            <span>{{ program.name }}</span>
+            <span>{{ program.name || '-' }}</span>
           </div>
           <div class="info-item">
             <label>表演者：</label>
-            <span>{{ program.performers }}</span>
+            <span>{{ program.performers || '-' }}</span>
           </div>
           <div class="info-item">
             <label>节目描述：</label>
@@ -35,7 +35,7 @@
           </div>
           <div class="info-item">
             <label>显示顺序：</label>
-            <span>{{ program.order_num }}</span>
+            <span>{{ program.order_num || 0 }}</span>
           </div>
           <div class="info-item">
             <label>收到火箭：</label>
@@ -131,11 +131,20 @@ export default {
       try {
         const token = localStorage.getItem('token')
         const response = await axios.get(`/programs/${route.params.id}`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         })
-        program.value = response.data.data
+        if (response.data.success && response.data.data) {
+          program.value = {
+            ...response.data.data,
+            gifts: response.data.data.gifts || []
+          }
+        } else {
+          ElMessage.error('获取节目信息失败')
+        }
       } catch (error) {
-        ElMessage.error('获取节目详情失败')
+        ElMessage.error('获取节目信息失败')
         console.error(error)
       } finally {
         loading.value = false
@@ -181,7 +190,20 @@ export default {
     }
 
     const formatDate = (date) => {
-      return new Date(date).toLocaleString()
+      if (!date) return '-'
+      try {
+        return new Date(date).toLocaleString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        })
+      } catch (e) {
+        return '-'
+      }
     }
 
     onMounted(() => {

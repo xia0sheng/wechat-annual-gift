@@ -16,7 +16,7 @@ class Program {
     }
 
     static async findById(id) {
-        const [[program], gifts] = await Promise.all([
+        const [[program], [gifts]] = await Promise.all([
             pool.query(
                 `SELECT 
                     p.*,
@@ -43,7 +43,10 @@ class Program {
 
         if (!program) return null;
 
-        return { ...program, gifts };
+        return { 
+            ...program,
+            gifts: Array.isArray(gifts) ? gifts : []
+        };
     }
 
     static async create(data) {
