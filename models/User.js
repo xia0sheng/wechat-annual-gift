@@ -21,8 +21,8 @@ class User {
         const { openid, nickname, sex, language, city, province, country, headimgurl, privilege } = userData;
         const [result] = await pool.query(
             `INSERT INTO users 
-            (openid, nickname, sex, language, city, province, country, headimgurl, privilege) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            (openid, nickname, sex, language, city, province, country, headimgurl, privilege, role)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'user')`,
             [openid, nickname, sex, language, city, province, country, headimgurl, JSON.stringify(privilege)]
         );
         return this.findById(result.insertId);
@@ -58,6 +58,14 @@ class User {
             [Number(offset), Number(limit)]
         );
         return rows;
+    }
+
+    static async isAdmin(userId) {
+        const [rows] = await pool.query(
+            'SELECT role FROM users WHERE id = ?',
+            [userId]
+        );
+        return rows[0]?.role === 'admin';
     }
 }
 

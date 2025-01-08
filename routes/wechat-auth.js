@@ -42,7 +42,8 @@ const generateToken = (user) => {
     return jwt.sign(
         { 
             id: user.id,
-            openid: user.openid 
+            openid: user.openid,
+            role: user.role
         },
         JWT_SECRET,
         { expiresIn: '7d' }
@@ -157,7 +158,26 @@ router.get('/auth', (req, res) => {
     res.redirect(authUrl);
 });
 
+// 管理员权限中间件
+const adminMiddleware = async (req, res, next) => {
+    try {
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ 
+                success: false, 
+                message: '需要管理员权限' 
+            });
+        }
+        next();
+    } catch (error) {
+        res.status(403).json({ 
+            success: false, 
+            message: '权限验证失败' 
+        });
+    }
+};
+
 module.exports = {
     router,
-    authMiddleware
+    authMiddleware,
+    adminMiddleware
 };
