@@ -138,4 +138,7 @@ router.get('/auth', (req, res) => {
     res.redirect(authUrl);
 });
 
-module.exports = router;
+module.exports = {
+    router,
+    authMiddleware
+};

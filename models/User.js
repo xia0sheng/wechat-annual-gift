@@ -46,6 +46,19 @@ class User {
         );
         return this.findByOpenid(openid);
     }
+
+    static async getTotalCount() {
+        const [rows] = await pool.execute('SELECT COUNT(*) as count FROM users');
+        return rows;
+    }
+
+    static async findAll(offset = 0, limit = 10) {
+        const [rows] = await pool.execute(
+            'SELECT * FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?',
+            [limit, offset]
+        );
+        return rows;
+    }
 }
 
 module.exports = User; 
