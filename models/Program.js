@@ -42,7 +42,7 @@ class Program {
 
     static async findById(id) {
         console.log('Finding program by ID:', id);
-        const [[basicInfo], [aggregateInfo], gifts] = await Promise.all([
+        const [[program], [stats], gifts] = await Promise.all([
             // 基本信息查询
             pool.query(
                 `SELECT 
@@ -83,18 +83,22 @@ class Program {
             )
         ]);
 
-        if (!basicInfo) return null;
+        if (!program) return null;
+
+        console.log('Raw program:', program);
+        console.log('Raw stats:', stats);
+        console.log('Raw gifts:', gifts);
 
         const result = {
-            id: basicInfo.id,
-            name: basicInfo.name || '',
-            description: basicInfo.description || '',
-            performers: basicInfo.performers || '',
-            order_num: basicInfo.order_num || 0,
-            created_at: basicInfo.created_at,
-            updated_at: basicInfo.updated_at,
-            total_rockets: parseInt(aggregateInfo[0]?.total_rockets) || 0,
-            gifters_count: parseInt(aggregateInfo[0]?.gifters_count) || 0,
+            id: program.id,
+            name: program.name || '',
+            description: program.description || '',
+            performers: program.performers || '',
+            order_num: program.order_num || 0,
+            created_at: program.created_at,
+            updated_at: program.updated_at,
+            total_rockets: parseInt(stats?.total_rockets) || 0,
+            gifters_count: parseInt(stats?.gifters_count) || 0,
             gifts: Array.isArray(gifts) ? gifts.map(gift => ({
                 id: gift.id,
                 user_id: gift.user_id,

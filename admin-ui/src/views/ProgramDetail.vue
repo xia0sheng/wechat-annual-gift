@@ -141,30 +141,40 @@ export default {
           }
         })
         console.log('Program response:', response.data)
-        if (response.data.success && response.data.data) {
-          program.value = {
-            id: response.data.data.id,
-            name: response.data.data.name || '',
-            description: response.data.data.description || '',
-            performers: response.data.data.performers || '',
-            order_num: response.data.data.order_num || 0,
-            total_rockets: parseInt(response.data.data.total_rockets) || 0,
-            gifters_count: parseInt(response.data.data.gifters_count) || 0,
-            created_at: response.data.data.created_at,
-            updated_at: response.data.data.updated_at,
-            gifts: (response.data.data.gifts || []).map(gift => ({
-              id: gift.id,
-              user_id: gift.user_id,
-              rockets: parseInt(gift.rockets) || 0,
-              created_at: gift.created_at,
-              nickname: gift.nickname || '',
-              headimgurl: gift.headimgurl || ''
-            }))
-          }
-          console.log('Processed program data:', program.value)
-        } else {
-          ElMessage.error('获取节目信息失败')
+        if (!response.data.success) {
+          console.error('API response indicates failure');
+          ElMessage.error('获取节目信息失败');
+          return;
         }
+        if (!response.data.data) {
+          console.error('No data in API response');
+          ElMessage.error('节目数据为空');
+          return;
+        }
+
+        const rawData = response.data.data;
+        console.log('Raw program data:', rawData);
+
+        program.value = {
+          id: rawData.id,
+          name: rawData.name || '',
+          description: rawData.description || '',
+          performers: rawData.performers || '',
+          order_num: rawData.order_num || 0,
+          total_rockets: parseInt(rawData.total_rockets) || 0,
+          gifters_count: parseInt(rawData.gifters_count) || 0,
+          created_at: rawData.created_at,
+          updated_at: rawData.updated_at,
+          gifts: (rawData.gifts || []).map(gift => ({
+            id: gift.id,
+            user_id: gift.user_id,
+            rockets: parseInt(gift.rockets) || 0,
+            created_at: gift.created_at,
+            nickname: gift.nickname || '',
+            headimgurl: gift.headimgurl || ''
+          }))
+        }
+        console.log('Processed program data:', program.value)
       } catch (error) {
         ElMessage.error(`获取节目信息失败: ${error.response?.data?.message || error.message}`)
         console.error('Program fetch error:', error.response?.data || error)
