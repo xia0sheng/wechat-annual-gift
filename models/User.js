@@ -2,7 +2,7 @@ const { pool } = require('../config/database');
 
 class User {
     static async findByOpenid(openid) {
-        const [rows] = await pool.execute(
+        const [rows] = await pool.query(
             'SELECT * FROM users WHERE openid = ?',
             [openid]
         );
@@ -10,7 +10,7 @@ class User {
     }
 
     static async findById(id) {
-        const [rows] = await pool.execute(
+        const [rows] = await pool.query(
             'SELECT * FROM users WHERE id = ?',
             [id]
         );
@@ -19,7 +19,7 @@ class User {
 
     static async create(userData) {
         const { openid, nickname, sex, language, city, province, country, headimgurl, privilege } = userData;
-        const [result] = await pool.execute(
+        const [result] = await pool.query(
             `INSERT INTO users 
             (openid, nickname, sex, language, city, province, country, headimgurl, privilege) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -30,7 +30,7 @@ class User {
 
     static async update(openid, userData) {
         const { nickname, sex, language, city, province, country, headimgurl, privilege } = userData;
-        await pool.execute(
+        await pool.query(
             `UPDATE users SET 
             nickname = ?, 
             sex = ?, 
@@ -48,14 +48,14 @@ class User {
     }
 
     static async getTotalCount() {
-        const [rows] = await pool.execute('SELECT COUNT(*) as count FROM users');
+        const [rows] = await pool.query('SELECT COUNT(*) as count FROM users');
         return rows;
     }
 
     static async findAll(offset = 0, limit = 10) {
-        const [rows] = await pool.execute(
-            'SELECT * FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?',
-            [limit, offset]
+        const [rows] = await pool.query(
+            'SELECT * FROM users ORDER BY created_at DESC LIMIT ?, ?',
+            [parseInt(offset), parseInt(limit)]
         );
         return rows;
     }
