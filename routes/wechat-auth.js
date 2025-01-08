@@ -41,7 +41,7 @@ const verifySignature = (signature, timestamp, nonce) => {
 const generateToken = (user) => {
     return jwt.sign(
         { 
-            id: user._id,
+            id: user.id,
             openid: user.openid 
         },
         JWT_SECRET,
@@ -56,6 +56,7 @@ async function handleCallback(code, res) {
         log('开始获取 access_token...');
 
         const tokenUrl = `https://api.weixin.qq.com/sns/oauth2/access_token?appid=${APPID}&secret=${APPSECRET}&code=${code}&grant_type=authorization_code`;
+        log('请求 token URL:', tokenUrl);
         const tokenRes = await axios.get(tokenUrl);
         const { access_token, openid } = tokenRes.data;
         log('获取到 access_token 和 openid:', { access_token, openid });
@@ -67,6 +68,7 @@ async function handleCallback(code, res) {
 
         const userInfoUrl = `https://api.weixin.qq.com/sns/userinfo?access_token=${access_token}&openid=${openid}&lang=zh_CN`;
         log('开始获取用户信息...');
+        log('请求用户信息 URL:', userInfoUrl);
         const userInfoRes = await axios.get(userInfoUrl);
         const wxUserInfo = userInfoRes.data;
         log('获取到用户信息:', wxUserInfo);
@@ -80,18 +82,20 @@ async function handleCallback(code, res) {
             log('更新用户信息...');
             user = await User.update(wxUserInfo.openid, wxUserInfo);
         }
+        log('用户数据:', user);
 
         // 生成 JWT token
         const token = generateToken(user);
-        log('生成 token 成功');
+        log('生成 token 成功:', token);
 
         // 重定向到管理界面
-        const adminUrl = `https://wx.thunis.com/admin/#/users?token=${token}`;
+        const adminUrl = `https://wx.thunis.com/admin?token=${token}#/users`;
         log('重定向到管理界面:', adminUrl);
         res.redirect(adminUrl);
 
     } catch (error) {
         log('授权回调处理失败:', error);
+        log('错误详情:', error.response?.data || error.message);
         handleError(res, error, '授权回调处理失败');
     }
 }

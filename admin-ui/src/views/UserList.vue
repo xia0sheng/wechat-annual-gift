@@ -106,13 +106,6 @@ export default {
     }
 
     onMounted(() => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token');
-      if (token) {
-        localStorage.setItem('token', token);
-        const cleanPath = window.location.pathname + window.location.hash.split('?')[0];
-        window.history.replaceState({}, document.title, cleanPath);
-      }
       fetchUsers();
     });
 
