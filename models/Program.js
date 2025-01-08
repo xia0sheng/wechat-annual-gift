@@ -42,27 +42,37 @@ class Program {
 
     static async findById(id) {
         console.log('Finding program by ID:', id);
-        const [[program], gifts] = await Promise.all([
+        const [[basicInfo], [aggregateInfo], gifts] = await Promise.all([
+            // 基本信息查询
             pool.query(
                 `SELECT 
-                    p.id,
-                    p.name,
-                    p.description,
-                    p.performers,
-                    p.order_num,
-                    p.created_at,
-                    p.updated_at,
-                    COALESCE(SUM(rg.rockets), 0) as total_rockets,
-                    COUNT(DISTINCT rg.user_id) as gifters_count
-                FROM programs p
-                LEFT JOIN rocket_gifts rg ON p.id = rg.program_id
-                WHERE p.id = ?
-                GROUP BY p.id`,
+                    id,
+                    name,
+                    description,
+                    performers,
+                    order_num,
+                    created_at,
+                    updated_at
+                FROM programs
+                WHERE id = ?`,
                 [id]
             ),
+            // 统计信息查询
             pool.query(
                 `SELECT 
-                    rg.*,
+                    COALESCE(SUM(rockets), 0) as total_rockets,
+                    COUNT(DISTINCT user_id) as gifters_count
+                FROM rocket_gifts
+                WHERE program_id = ?`,
+                [id]
+            ),
+            // 礼物记录查询
+            pool.query(
+                `SELECT 
+                    rg.id,
+                    rg.user_id,
+                    rg.rockets,
+                    rg.created_at,
                     u.nickname,
                     u.headimgurl
                 FROM rocket_gifts rg
@@ -73,22 +83,12 @@ class Program {
             )
         ]);
 
-        console.log('Raw program data:', program);
-        console.log('Raw gifts data:', gifts);
+        if (!basicInfo) return null;
 
-        if (!program) return null;
-
-        // 确保返回的是普通对象而不是 RowDataPacket
         const result = {
-            id: program.id,
-            name: program.name || '',
-            description: program.description || '',
-            performers: program.performers || '',
-            order_num: program.order_num || 0,
-            total_rockets: parseInt(program.total_rockets) || 0,
-            gifters_count: parseInt(program.gifters_count) || 0,
-            created_at: program.created_at,
-            updated_at: program.updated_at,
+            ...basicInfo,
+            total_rockets: parseInt(aggregateInfo.total_rockets) || 0,
+            gifters_count: parseInt(aggregateInfo.gifters_count) || 0,
             gifts: Array.isArray(gifts) ? gifts.map(gift => ({
                 id: gift.id,
                 user_id: gift.user_id,
@@ -99,7 +99,6 @@ class Program {
             })) : []
         };
 
-        // 调试输出
         console.log('Final processed result:', JSON.stringify(result, null, 2));
         return result;
     }
