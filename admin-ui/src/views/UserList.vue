@@ -110,7 +110,8 @@ export default {
       const token = urlParams.get('token');
       if (token) {
         localStorage.setItem('token', token);
-        window.history.replaceState({}, document.title, window.location.pathname);
+        const cleanPath = window.location.pathname + window.location.hash.split('?')[0];
+        window.history.replaceState({}, document.title, cleanPath);
       }
       fetchUsers();
     });

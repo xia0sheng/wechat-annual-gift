@@ -79,8 +79,10 @@ async function handleCallback(code, res) {
         const token = generateToken(user);
 
         // 重定向到管理界面并带上 token
-        const redirectUrl = `https://wx.thunis.com/admin/#/users?token=${token}`;
-        res.redirect(redirectUrl);
+        const adminUrl = `https://wx.thunis.com/admin/#/users?token=${token}`;
+        log('重定向到管理界面:', adminUrl);
+        res.redirect(adminUrl);
+
     } catch (error) {
         handleError(res, error, '授权回调处理失败');
     }
