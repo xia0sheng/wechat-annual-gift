@@ -15,15 +15,34 @@ class Program {
                 COUNT(DISTINCT rg.user_id) as gifters_count
             FROM programs p
             LEFT JOIN rocket_gifts rg ON p.id = rg.program_id
-            GROUP BY p.id
+            GROUP BY 
+                p.id, 
+                p.name, 
+                p.description, 
+                p.performers, 
+                p.order_num, 
+                p.created_at, 
+                p.updated_at
             ORDER BY p.order_num ASC
         `);
-        return rows;
+
+        // 确保返回的数据都有默认值
+        return rows.map(row => ({
+            id: row.id,
+            name: row.name || '',
+            description: row.description || '',
+            performers: row.performers || '',
+            order_num: row.order_num || 0,
+            total_rockets: parseInt(row.total_rockets) || 0,
+            gifters_count: parseInt(row.gifters_count) || 0,
+            created_at: row.created_at,
+            updated_at: row.updated_at
+        }));
     }
 
     static async findById(id) {
         console.log('Finding program by ID:', id);
-        const [[program], [gifts]] = await Promise.all([
+        const [[program], gifts] = await Promise.all([
             pool.query(
                 `SELECT 
                     p.id,
@@ -62,10 +81,10 @@ class Program {
         // 确保返回的是普通对象而不是 RowDataPacket
         const result = {
             id: program.id,
-            name: program.name,
-            description: program.description,
-            performers: program.performers,
-            order_num: program.order_num,
+            name: program.name || '',
+            description: program.description || '',
+            performers: program.performers || '',
+            order_num: program.order_num || 0,
             total_rockets: parseInt(program.total_rockets) || 0,
             gifters_count: parseInt(program.gifters_count) || 0,
             created_at: program.created_at,
@@ -73,10 +92,10 @@ class Program {
             gifts: Array.isArray(gifts) ? gifts.map(gift => ({
                 id: gift.id,
                 user_id: gift.user_id,
-                rockets: gift.rockets,
+                rockets: parseInt(gift.rockets) || 0,
                 created_at: gift.created_at,
-                nickname: gift.nickname,
-                headimgurl: gift.headimgurl
+                nickname: gift.nickname || '',
+                headimgurl: gift.headimgurl || ''
             })) : []
         };
 
