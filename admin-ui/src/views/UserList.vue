@@ -8,7 +8,7 @@
         </div>
       </template>
 
-      <el-table :data="users" style="width: 100%" v-loading="loading">
+      <el-table :data="users" style="width: 100%" v-loading="loading" class="responsive-table">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="nickname" label="昵称" />
         <el-table-column prop="real_name" label="真实姓名" width="120">
@@ -55,32 +55,34 @@
             {{ formatDate(scope.row.last_login) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" min-width="120">
           <template #default="scope">
-            <el-button
-              v-if="!scope.row.editing"
-              type="primary"
-              size="small"
-              @click="handleEdit(scope.row)"
-            >
-              编辑
-            </el-button>
-            <template v-else>
+            <div class="operation-buttons">
               <el-button
-                type="success"
+                v-if="!scope.row.editing"
+                type="primary"
                 size="small"
-                @click="handleSave(scope.row)"
+                @click="handleEdit(scope.row)"
               >
-                保存
+                编辑
               </el-button>
-              <el-button
-                type="info"
-                size="small"
-                @click="handleCancel(scope.row)"
-              >
-                取消
-              </el-button>
-            </template>
+              <template v-else>
+                <el-button
+                  type="success"
+                  size="small"
+                  @click="handleSave(scope.row)"
+                >
+                  保存
+                </el-button>
+                <el-button
+                  type="info"
+                  size="small"
+                  @click="handleCancel(scope.row)"
+                >
+                  取消
+                </el-button>
+              </template>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -223,5 +225,46 @@ export default {
 .pagination {
   margin-top: 20px;
   text-align: right;
+}
+
+/* 响应式表格样式 */
+@media (max-width: 768px) {
+  .responsive-table {
+    :deep(.el-table__header-wrapper) {
+      display: none;
+    }
+
+    :deep(.el-table__body-wrapper) {
+      td {
+        display: block;
+        width: 100%;
+        border: none;
+        padding: 5px 10px;
+
+        &::before {
+          content: attr(data-label);
+          font-weight: bold;
+          display: inline-block;
+          width: 100px;
+        }
+      }
+
+      tr {
+        display: block;
+        border-bottom: 1px solid #EBEEF5;
+        padding: 10px 0;
+      }
+    }
+  }
+
+  .operation-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+
+    .el-button {
+      margin: 0;
+    }
+  }
 }
 </style> 

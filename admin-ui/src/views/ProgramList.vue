@@ -14,7 +14,12 @@
         </div>
       </template>
 
-      <el-table :data="programs" style="width: 100%" v-loading="loading">
+      <el-table 
+        :data="programs" 
+        style="width: 100%" 
+        v-loading="loading"
+        class="responsive-table"
+      >
         <el-table-column prop="order_num" label="序号" width="80" />
         <el-table-column prop="name" label="节目名称" />
         <el-table-column prop="performers" label="表演者" />
@@ -28,38 +33,40 @@
             {{ scope.row.gifters_count || 0 }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="250" fixed="right">
+        <el-table-column label="操作" min-width="200">
           <template #default="scope">
-            <el-button
-              type="primary"
-              size="small"
-              @click="handleView(scope.row)"
-            >
-              查看详情
-            </el-button>
-            <el-button
-              type="success"
-              size="small"
-              @click="handleGift(scope.row)"
-            >
-              赠送火箭
-            </el-button>
-            <template v-if="isAdmin">
+            <div class="operation-buttons">
               <el-button
-                type="warning"
+                type="primary"
                 size="small"
-                @click="handleEdit(scope.row)"
+                @click="handleView(scope.row)"
               >
-                编辑
+                查看详情
               </el-button>
               <el-button
-                type="danger"
+                type="success"
                 size="small"
-                @click="handleDelete(scope.row)"
+                @click="handleGift(scope.row)"
               >
-                删除
+                赠送火箭
               </el-button>
-            </template>
+              <template v-if="isAdmin">
+                <el-button
+                  type="warning"
+                  size="small"
+                  @click="handleEdit(scope.row)"
+                >
+                  编辑
+                </el-button>
+                <el-button
+                  type="danger"
+                  size="small"
+                  @click="handleDelete(scope.row)"
+                >
+                  删除
+                </el-button>
+              </template>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -354,5 +361,46 @@ export default {
   text-align: center;
   color: #666;
   margin-top: 10px;
+}
+
+/* 响应式表格样式 */
+@media (max-width: 768px) {
+  .responsive-table {
+    :deep(.el-table__header-wrapper) {
+      display: none;
+    }
+
+    :deep(.el-table__body-wrapper) {
+      td {
+        display: block;
+        width: 100%;
+        border: none;
+        padding: 5px 10px;
+
+        &::before {
+          content: attr(data-label);
+          font-weight: bold;
+          display: inline-block;
+          width: 100px;
+        }
+      }
+
+      tr {
+        display: block;
+        border-bottom: 1px solid #EBEEF5;
+        padding: 10px 0;
+      }
+    }
+  }
+
+  .operation-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+
+    .el-button {
+      margin: 0;
+    }
+  }
 }
 </style> 

@@ -16,7 +16,7 @@ class Program {
     }
 
     static async findById(id) {
-        const [[program], [gifts]] = await Promise.all([
+        const [[program], gifts] = await Promise.all([
             pool.query(
                 `SELECT 
                     p.*,
