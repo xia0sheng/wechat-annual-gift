@@ -3,6 +3,30 @@ const router = express.Router();
 const User = require('../models/User');
 const { authMiddleware, adminMiddleware } = require('./wechat-auth');
 
+// 获取当前用户信息 - 需要放在具体路由之前
+router.get('/me', authMiddleware, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: '用户不存在'
+            });
+        }
+        res.json({
+            success: true,
+            data: user
+        });
+    } catch (error) {
+        console.error('获取用户信息失败:', error);
+        res.status(500).json({
+            success: false,
+            message: '获取用户信息失败',
+            error: error.message
+        });
+    }
+});
+
 // 获取用户列表（分页）- 仅管理员可访问
 router.get('/', authMiddleware, adminMiddleware, async (req, res) => {
     try {
@@ -49,30 +73,6 @@ router.get('/:openid', authMiddleware, async (req, res) => {
             });
         }
 
-        res.json({
-            success: true,
-            data: user
-        });
-    } catch (error) {
-        console.error('获取用户信息失败:', error);
-        res.status(500).json({
-            success: false,
-            message: '获取用户信息失败',
-            error: error.message
-        });
-    }
-});
-
-// 获取当前用户信息
-router.get('/me', authMiddleware, async (req, res) => {
-    try {
-        const user = await User.findById(req.user.id);
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: '用户不存在'
-            });
-        }
         res.json({
             success: true,
             data: user

@@ -15,8 +15,9 @@
 </template>
 
 <script>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 export default {
   setup() {
@@ -27,6 +28,19 @@ export default {
       localStorage.removeItem('token')
       router.push('/login')
     }
+
+    onMounted(() => {
+      axios.interceptors.response.use(
+        response => response,
+        error => {
+          if (error.response?.status === 401) {
+            localStorage.removeItem('token')
+            router.push('/login')
+          }
+          return Promise.reject(error)
+        }
+      )
+    })
 
     return {
       isLoggedIn,

@@ -49,8 +49,13 @@ export default {
         })
         user.value = response.data.data
       } catch (error) {
-        ElMessage.error('获取用户信息失败')
-        console.error(error)
+        ElMessage.error(`获取用户信息失败: ${error.response?.data?.message || error.message}`)
+        console.error('获取用户信息失败:', error.response?.data || error)
+        if (error.response?.status === 401) {
+          // 如果是认证失败，重定向到登录页面
+          localStorage.removeItem('token')
+          window.location.href = '/admin/#/login'
+        }
       }
     }
 
