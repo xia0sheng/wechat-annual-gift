@@ -10,7 +10,7 @@ const router = express.Router();
 // 配置信息从环境变量中读取
 const APPID = process.env.WECHAT_APPID;
 const APPSECRET = process.env.WECHAT_APPSECRET;
-const REDIRECT_URI = encodeURIComponent(process.env.WECHAT_REDIRECT_URI + '/callback');
+const REDIRECT_URI = encodeURIComponent(process.env.WECHAT_REDIRECT_URI);
 const TOKEN = process.env.WECHAT_TOKEN;
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -120,7 +120,7 @@ router.get('/user', authMiddleware, async (req, res) => {
 });
 
 // 回调路由
-router.get('/callback', (req, res) => {
+router.get('/', (req, res) => {
     const { signature, timestamp, nonce, echostr, code } = req.query;
     if (signature && timestamp && nonce && echostr) {
         return verifySignature(signature, timestamp, nonce) ? res.send(echostr) : res.status(401).send('签名验证失败');
@@ -134,7 +134,7 @@ router.get('/callback', (req, res) => {
 // 授权路由
 router.get('/auth', (req, res) => {
     const scope = 'snsapi_userinfo';
-    const authUrl = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${APPID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${scope}&state=STATE#wechat_redirect`;
+    const authUrl = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${APPID}&redirect_uri=${REDIRECT_URI}/wechat&response_type=code&scope=${scope}&state=STATE#wechat_redirect`;
     res.redirect(authUrl);
 });
 
