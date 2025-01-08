@@ -53,37 +53,45 @@ const generateToken = (user) => {
 async function handleCallback(code, res) {
     try {
         log('处理授权回调, code:', code);
+        log('开始获取 access_token...');
 
         const tokenUrl = `https://api.weixin.qq.com/sns/oauth2/access_token?appid=${APPID}&secret=${APPSECRET}&code=${code}&grant_type=authorization_code`;
         const tokenRes = await axios.get(tokenUrl);
         const { access_token, openid } = tokenRes.data;
+        log('获取到 access_token 和 openid:', { access_token, openid });
 
         if (!access_token || !openid) {
+            log('获取 access_token 失败:', tokenRes.data);
             return res.status(500).json({ success: false, message: '获取access_token失败' });
         }
 
         const userInfoUrl = `https://api.weixin.qq.com/sns/userinfo?access_token=${access_token}&openid=${openid}&lang=zh_CN`;
+        log('开始获取用户信息...');
         const userInfoRes = await axios.get(userInfoUrl);
         const wxUserInfo = userInfoRes.data;
+        log('获取到用户信息:', wxUserInfo);
 
         // 查找或创建用户
         let user = await User.findByOpenid(wxUserInfo.openid);
         if (!user) {
+            log('创建新用户...');
             user = await User.create(wxUserInfo);
         } else {
-            // 更新用户信息
+            log('更新用户信息...');
             user = await User.update(wxUserInfo.openid, wxUserInfo);
         }
 
         // 生成 JWT token
         const token = generateToken(user);
+        log('生成 token 成功');
 
-        // 重定向到管理界面并带上 token
+        // 重定向到管理界面
         const adminUrl = `https://wx.thunis.com/admin/#/users?token=${token}`;
         log('重定向到管理界面:', adminUrl);
         res.redirect(adminUrl);
 
     } catch (error) {
+        log('授权回调处理失败:', error);
         handleError(res, error, '授权回调处理失败');
     }
 }
@@ -138,7 +146,9 @@ router.get('/', (req, res) => {
 router.get('/auth', (req, res) => {
     log('开始微信授权');
     const scope = 'snsapi_userinfo';
-    const authUrl = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${APPID}&redirect_uri=${REDIRECT_URI}/wechat&response_type=code&scope=${scope}&state=STATE#wechat_redirect`;
+    const callbackUrl = `${REDIRECT_URI}/wechat`;
+    log('回调 URL:', callbackUrl);
+    const authUrl = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${APPID}&redirect_uri=${encodeURIComponent(callbackUrl)}&response_type=code&scope=${scope}&state=STATE#wechat_redirect`;
     log('重定向到:', authUrl);
     res.redirect(authUrl);
 });
