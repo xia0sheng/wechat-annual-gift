@@ -38,6 +38,16 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
+  // 检查 URL 中是否有 token
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlToken = urlParams.get('token');
+  if (urlToken) {
+    localStorage.setItem('token', urlToken);
+    // 清除 URL 中的 token，但保留 hash
+    const newUrl = window.location.pathname + window.location.hash;
+    window.history.replaceState({}, document.title, newUrl);
+  }
+
   const token = localStorage.getItem('token');
   if (to.meta.requiresAuth && !token) {
     next('/login');

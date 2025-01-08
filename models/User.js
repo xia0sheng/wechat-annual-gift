@@ -23,7 +23,7 @@ class User {
             `INSERT INTO users 
             (openid, nickname, sex, language, city, province, country, headimgurl, privilege, role)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'user')`,
-            [openid, nickname, sex, language, city, province, country, headimgurl, JSON.stringify(privilege)]
+            [openid, nickname, sex, language, city, province, country, headimgurl, JSON.stringify(privilege), 'user']
         );
         return this.findById(result.insertId);
     }

@@ -32,6 +32,7 @@ export default {
     const router = useRouter()
 
     const handleWechatLogin = () => {
+      loading.value = true;
       window.location.href = 'https://wx.thunis.com/wechat/auth'
     }
 

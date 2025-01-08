@@ -89,10 +89,11 @@ async function handleCallback(code, res) {
         const token = generateToken(user);
         log('生成 token 成功:', token);
 
-        // 重定向到管理界面
-        const adminUrl = `https://wx.thunis.com/admin?token=${token}#/users`;
-        log('重定向到管理界面:', adminUrl);
-        res.redirect(adminUrl);
+        // 根据用户角色决定重定向地址
+        const redirectPath = user.role === 'admin' ? '/users' : '/profile';
+        const redirectUrl = `https://wx.thunis.com/admin?token=${token}#${redirectPath}`;
+        log('重定向到管理界面:', redirectUrl);
+        res.redirect(redirectUrl);
 
     } catch (error) {
         log('授权回调处理失败:', error);
