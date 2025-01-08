@@ -42,7 +42,7 @@ class Program {
 
     static async findById(id) {
         console.log('Finding program by ID:', id);
-        const [[program], [stats], gifts] = await Promise.all([
+        const [programResult, statsResult, giftsResult] = await Promise.all([
             // 基本信息查询
             pool.query(
                 `SELECT 
@@ -82,6 +82,10 @@ class Program {
                 [id]
             )
         ]);
+
+        const program = programResult[0][0];
+        const stats = statsResult[0][0];
+        const gifts = giftsResult[0];
 
         if (!program) return null;
 
