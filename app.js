@@ -18,6 +18,12 @@ initDB().catch(err => {
 
 const app = express();
 
+// 请求日志中间件
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+});
+
 // 中间件
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

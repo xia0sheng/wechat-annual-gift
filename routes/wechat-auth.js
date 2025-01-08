@@ -121,20 +121,27 @@ router.get('/user', authMiddleware, async (req, res) => {
 
 // 回调路由
 router.get('/', (req, res) => {
+    log('收到请求:', req.url);
     const { signature, timestamp, nonce, echostr, code } = req.query;
     if (signature && timestamp && nonce && echostr) {
+        log('处理服务器验证请求');
         return verifySignature(signature, timestamp, nonce) ? res.send(echostr) : res.status(401).send('签名验证失败');
     }
 
-    if (code) return handleCallback(code, res);
+    if (code) {
+        log('处理授权回调');
+        return handleCallback(code, res);
+    }
 
     res.send('服务器正常运行中');
 });
 
 // 授权路由
 router.get('/auth', (req, res) => {
+    log('开始微信授权');
     const scope = 'snsapi_userinfo';
     const authUrl = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${APPID}&redirect_uri=${REDIRECT_URI}/wechat&response_type=code&scope=${scope}&state=STATE#wechat_redirect`;
+    log('重定向到:', authUrl);
     res.redirect(authUrl);
 });
 
