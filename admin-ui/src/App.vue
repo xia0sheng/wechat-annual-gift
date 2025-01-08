@@ -21,6 +21,14 @@
               用户管理
             </router-link>
             <router-link 
+              v-if="isAdmin" 
+              to="/admin-token" 
+              class="nav-item"
+              :class="{ active: $route.path === '/admin-token' }"
+            >
+              Token 管理
+            </router-link>
+            <router-link 
               to="/profile" 
               class="nav-item"
               :class="{ active: $route.path === '/profile' }"

@@ -3,6 +3,7 @@ import UserList from './views/UserList.vue'
 import Login from './views/Login.vue'
 import ProgramList from './views/ProgramList.vue'
 import ProgramDetail from './views/ProgramDetail.vue'
+import AdminToken from './views/AdminToken.vue'
 
 const routes = [
   {
@@ -41,6 +42,11 @@ const routes = [
     path: '/programs/:id',
     component: ProgramDetail,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin-token',
+    component: AdminToken,
+    meta: { requiresAuth: true, requiresAdmin: true }
   }
 ]
 
