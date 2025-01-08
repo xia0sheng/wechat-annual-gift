@@ -87,4 +87,33 @@ router.get('/:openid', authMiddleware, async (req, res) => {
     }
 });
 
+// 更新用户信息（仅管理员可用）
+router.put('/:id', authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { rockets, real_name } = req.body;
+        
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: '用户不存在'
+            });
+        }
+        
+        const updatedUser = await User.updateUserInfo(id, { rockets, real_name });
+        res.json({
+            success: true,
+            data: updatedUser
+        });
+    } catch (error) {
+        console.error('更新用户信息失败:', error);
+        res.status(500).json({
+            success: false,
+            message: '更新用户信息失败',
+            error: error.message
+        });
+    }
+});
+
 module.exports = router; 

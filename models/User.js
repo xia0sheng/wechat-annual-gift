@@ -67,6 +67,31 @@ class User {
         );
         return rows[0]?.role === 'admin';
     }
+
+    static async updateUserInfo(id, { rockets, real_name }) {
+        const updates = [];
+        const values = [];
+        
+        if (rockets !== undefined) {
+            updates.push('rockets = ?');
+            values.push(rockets);
+        }
+        
+        if (real_name !== undefined) {
+            updates.push('real_name = ?');
+            values.push(real_name);
+        }
+        
+        if (updates.length === 0) return null;
+        
+        values.push(id);
+        const [result] = await pool.query(
+            `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
+            values
+        );
+        
+        return this.findById(id);
+    }
 }
 
 module.exports = User; 

@@ -11,6 +11,27 @@
       <el-table :data="users" style="width: 100%" v-loading="loading">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="nickname" label="昵称" />
+        <el-table-column prop="real_name" label="真实姓名" width="120">
+          <template #default="scope">
+            <el-input
+              v-if="scope.row.editing"
+              v-model="scope.row.real_name"
+              size="small"
+            />
+            <span v-else>{{ scope.row.real_name || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="rockets" label="火箭数量" width="120">
+          <template #default="scope">
+            <el-input-number
+              v-if="scope.row.editing"
+              v-model="scope.row.rockets"
+              :min="0"
+              size="small"
+            />
+            <span v-else>{{ scope.row.rockets || 0 }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="openid" label="OpenID" width="280" />
         <el-table-column prop="sex" label="性别" width="80">
           <template #default="scope">
@@ -32,6 +53,34 @@
         <el-table-column label="最后登录时间" width="180">
           <template #default="scope">
             {{ formatDate(scope.row.last_login) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="150" fixed="right">
+          <template #default="scope">
+            <el-button
+              v-if="!scope.row.editing"
+              type="primary"
+              size="small"
+              @click="handleEdit(scope.row)"
+            >
+              编辑
+            </el-button>
+            <template v-else>
+              <el-button
+                type="success"
+                size="small"
+                @click="handleSave(scope.row)"
+              >
+                保存
+              </el-button>
+              <el-button
+                type="info"
+                size="small"
+                @click="handleCancel(scope.row)"
+              >
+                取消
+              </el-button>
+            </template>
           </template>
         </el-table-column>
       </el-table>
@@ -68,7 +117,7 @@ export default {
       loading.value = true
       try {
         const token = localStorage.getItem('token')
-        const response = await axios.get(`/users`, {
+        const response = await axios.get('/users', {
           params: {
             page: currentPage.value,
             limit: pageSize.value
@@ -77,8 +126,11 @@ export default {
             Authorization: `Bearer ${token}`
           }
         })
-        console.log('用户列表响应:', response.data);
-        users.value = response.data.data.users
+        users.value = response.data.data.users.map(user => ({
+          ...user,
+          editing: false,
+          originalData: { ...user }
+        }))
         total.value = response.data.data.pagination.total
       } catch (error) {
         ElMessage.error(`获取用户列表失败: ${error.response?.data?.message || error.message}`)
@@ -86,6 +138,35 @@ export default {
       } finally {
         loading.value = false
       }
+    }
+
+    const handleEdit = (row) => {
+      row.editing = true
+      row.originalData = { ...row }
+    }
+
+    const handleSave = async (row) => {
+      try {
+        const token = localStorage.getItem('token')
+        await axios.put(`/users/${row.id}`, {
+          rockets: row.rockets,
+          real_name: row.real_name
+        }, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+        row.editing = false
+        ElMessage.success('更新成功')
+      } catch (error) {
+        ElMessage.error(`更新失败: ${error.response?.data?.message || error.message}`)
+        Object.assign(row, row.originalData)
+      }
+    }
+
+    const handleCancel = (row) => {
+      Object.assign(row, row.originalData)
+      row.editing = false
     }
 
     const handleSizeChange = (val) => {
@@ -107,8 +188,8 @@ export default {
     }
 
     onMounted(() => {
-      fetchUsers();
-    });
+      fetchUsers()
+    })
 
     return {
       users,
@@ -116,6 +197,9 @@ export default {
       currentPage,
       pageSize,
       total,
+      handleEdit,
+      handleSave,
+      handleCancel,
       handleSizeChange,
       handleCurrentChange,
       refreshData,

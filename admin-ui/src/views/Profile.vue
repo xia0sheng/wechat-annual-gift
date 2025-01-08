@@ -14,6 +14,14 @@
           <span>{{ user.nickname }}</span>
         </div>
         <div class="info-item">
+          <label>真实姓名：</label>
+          <span>{{ user.real_name || '-' }}</span>
+        </div>
+        <div class="info-item">
+          <label>火箭数量：</label>
+          <span>{{ user.rockets || 0 }}</span>
+        </div>
+        <div class="info-item">
           <label>性别：</label>
           <span>{{ user.sex === 1 ? '男' : user.sex === 2 ? '女' : '未知' }}</span>
         </div>
