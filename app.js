@@ -1,5 +1,5 @@
 const express = require('express');
-const connectDB = require('./config/database');
+const { initDB } = require('./config/database');
 
 // 错误处理
 process.on('uncaughtException', (err) => {
@@ -10,8 +10,11 @@ process.on('unhandledRejection', (reason, promise) => {
     console.error('未处理的拒绝:', reason);
 });
 
-// 连接数据库
-connectDB();
+// 初始化数据库
+initDB().catch(err => {
+    console.error('数据库初始化失败:', err);
+    process.exit(1);
+});
 
 const app = express();
 

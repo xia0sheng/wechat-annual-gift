@@ -12,8 +12,8 @@ const pool = mysql.createPool({
     queueLimit: 0
 });
 
-// 测试连接
-const connectDB = async () => {
+// 初始化数据库连接
+async function initDB() {
     try {
         await pool.getConnection();
         console.log('MySQL 连接成功');
@@ -42,4 +42,4 @@ const connectDB = async () => {
     }
 };
 
-module.exports = { pool, connectDB }; 
+module.exports = { pool, initDB }; 
