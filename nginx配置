@@ -20,7 +20,7 @@ server {
     }
 
     # API 代理 - 合并所有 API 路由
-    location ~ ^/(users|programs|wechat) {
+    location ~ ^/(users|programs|wechat|api/big-screen) {
         proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
