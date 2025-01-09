@@ -57,13 +57,15 @@
 </template>
 
 <script>
-import { computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 
 export default {
   setup() {
     const router = useRouter()
+    const route = useRoute()
+    
     const isLoggedIn = computed(() => !!localStorage.getItem('token'))
     const isAdmin = computed(() => {
       const token = localStorage.getItem('token')
@@ -80,6 +82,17 @@ export default {
       localStorage.removeItem('token')
       window.location.replace('/admin/#/login')
     }
+
+    // 监听路由变化
+    watch(() => route.path, (newPath) => {
+      // 确保在路由变化时重新计算登录状态
+      if (newPath !== '/login') {
+        const token = localStorage.getItem('token')
+        if (!token) {
+          router.push('/login')
+        }
+      }
+    })
 
     onMounted(() => {
       axios.interceptors.response.use(
