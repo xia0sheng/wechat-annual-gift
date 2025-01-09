@@ -66,26 +66,30 @@ router.beforeEach((to, from, next) => {
     window.history.replaceState({}, document.title, newUrl);
   }
 
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token')
   if (to.meta.requiresAuth && !token) {
-    next('/login');
-    return;
+    next('/login')
+    return
   }
 
-  if (to.meta.requiresAdmin && token) {
+  // 添加 token 有效性验证
+  if (token) {
     try {
-      const decoded = JSON.parse(atob(token.split('.')[1]));
-      if (decoded.role !== 'admin') {
-        next('/profile');
-        return;
+      const decoded = JSON.parse(atob(token.split('.')[1]))
+      // 检查 token 是否过期
+      if (decoded.exp && decoded.exp < Date.now() / 1000) {
+        localStorage.clear()
+        next('/login')
+        return
       }
     } catch (e) {
-      next('/login');
-      return;
+      localStorage.clear()
+      next('/login')
+      return
     }
   }
 
-  next();
+  next()
 })
 
 export default router 

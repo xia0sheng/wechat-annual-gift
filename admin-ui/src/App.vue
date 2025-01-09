@@ -77,17 +77,40 @@ export default {
     })
 
     const logout = () => {
+      // 清理所有本地存储
+      localStorage.clear()
+      // 或者明确清理所有可能的认证相关数据
       localStorage.removeItem('token')
-      router.push('/login')
+      localStorage.removeItem('user')
+      
+      // 强制刷新页面，确保所有状态都被重置
+      window.location.href = '/admin/#/login'
     }
 
     onMounted(() => {
+      // 验证当前 token 是否有效
+      const token = localStorage.getItem('token')
+      if (token) {
+        try {
+          const decoded = JSON.parse(atob(token.split('.')[1]))
+          if (decoded.exp && decoded.exp < Date.now() / 1000) {
+            // token 已过期，清理并重定向
+            localStorage.clear()
+            router.push('/login')
+          }
+        } catch (e) {
+          localStorage.clear()
+          router.push('/login')
+        }
+      }
+
+      // 添加响应拦截器
       axios.interceptors.response.use(
         response => response,
         error => {
           if (error.response?.status === 401) {
-            localStorage.removeItem('token')
-            router.push('/login')
+            localStorage.clear()
+            window.location.href = '/admin/#/login'
           }
           return Promise.reject(error)
         }
