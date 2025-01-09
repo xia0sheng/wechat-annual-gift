@@ -65,8 +65,8 @@ router.beforeEach((to, from, next) => {
     // 使用 replace 清除 URL 中的 token
     const newUrl = window.location.pathname + window.location.hash
     window.history.replaceState({}, document.title, newUrl)
-    // 使用路由跳转
-    next('/programs')
+    // 跳转到后台首页
+    window.location.replace('/admin')
     return
   }
 
