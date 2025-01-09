@@ -33,7 +33,8 @@ export default {
 
     const handleWechatLogin = () => {
       loading.value = true
-      window.location.href = 'https://wx.thunis.com/wechat/auth'
+      localStorage.removeItem('token')
+      window.location.replace('https://wx.thunis.com/wechat/auth')
     }
 
     return {

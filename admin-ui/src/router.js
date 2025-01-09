@@ -57,13 +57,17 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   // 检查 URL 中是否有 token
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlToken = urlParams.get('token');
+  const urlParams = new URLSearchParams(window.location.search)
+  const urlToken = urlParams.get('token')
+  
   if (urlToken) {
-    localStorage.setItem('token', urlToken);
-    // 清除 URL 中的 token，但保留 hash
-    const newUrl = window.location.pathname + window.location.hash;
-    window.history.replaceState({}, document.title, newUrl);
+    localStorage.setItem('token', urlToken)
+    // 使用 replace 清除 URL 中的 token
+    const newUrl = window.location.pathname + window.location.hash
+    window.history.replaceState({}, document.title, newUrl)
+    // 直接跳转到首页
+    next('/programs')
+    return
   }
 
   const token = localStorage.getItem('token')
