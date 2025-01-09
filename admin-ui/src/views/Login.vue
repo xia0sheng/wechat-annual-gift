@@ -33,10 +33,6 @@ export default {
 
     const handleWechatLogin = () => {
       loading.value = true
-      // 清理旧数据
-      localStorage.clear()
-      // 记录重定向前的路径
-      sessionStorage.setItem('redirectPath', router.currentRoute.value.fullPath)
       window.location.href = 'https://wx.thunis.com/wechat/auth'
     }
 

@@ -72,18 +72,14 @@ router.beforeEach((to, from, next) => {
     return
   }
 
-  // 添加 token 有效性验证
-  if (token) {
+  if (to.meta.requiresAdmin && token) {
     try {
       const decoded = JSON.parse(atob(token.split('.')[1]))
-      // 检查 token 是否过期
-      if (decoded.exp && decoded.exp < Date.now() / 1000) {
-        localStorage.clear()
-        next('/login')
+      if (decoded.role !== 'admin') {
+        next('/profile')
         return
       }
     } catch (e) {
-      localStorage.clear()
       next('/login')
       return
     }
