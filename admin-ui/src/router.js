@@ -4,6 +4,7 @@ import Login from './views/Login.vue'
 import ProgramList from './views/ProgramList.vue'
 import ProgramDetail from './views/ProgramDetail.vue'
 import AdminToken from './views/AdminToken.vue'
+import BigScreen from './views/BigScreen.vue'
 
 const routes = [
   {
@@ -46,6 +47,12 @@ const routes = [
   {
     path: '/admin-token',
     component: AdminToken,
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/big-screen',
+    name: 'BigScreen',
+    component: BigScreen,
     meta: { requiresAuth: true, requiresAdmin: true }
   }
 ]
