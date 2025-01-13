@@ -69,6 +69,7 @@ export default {
   background: #1a1a1a;
   color: #fff;
   min-height: 100vh;
+  box-sizing: border-box;
 }
 
 h1 {
@@ -178,5 +179,81 @@ h2 {
   color: #666;
   background: #111;
   border-radius: 8px;
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 768px) {
+  .big-screen {
+    padding: 10px;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  h1 {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+
+  .screen-content {
+    flex-direction: column;
+    height: auto;
+    gap: 15px;
+  }
+
+  .rank-section, .gift-section, .video-section {
+    width: 100%;
+    min-height: 200px;
+    max-height: 300px;
+  }
+
+  .video-section {
+    order: 2; /* 调整视频区域在移动端的显示顺序 */
+    height: 200px;
+  }
+
+  .rank-section {
+    order: 1;
+  }
+
+  .gift-section {
+    order: 3;
+  }
+
+  .rank-item, .gift-item {
+    padding: 8px;
+    margin: 3px 0;
+  }
+
+  .program-name {
+    font-size: 14px;
+  }
+
+  .gift-time {
+    font-size: 12px;
+  }
+
+  .gift-info {
+    font-size: 14px;
+  }
+
+  h2 {
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+}
+
+/* 针对特别小的屏幕 */
+@media screen and (max-width: 320px) {
+  .big-screen {
+    padding: 5px;
+  }
+
+  h1 {
+    font-size: 18px;
+  }
+
+  .rank-section, .gift-section, .video-section {
+    min-height: 180px;
+  }
 }
 </style> 
