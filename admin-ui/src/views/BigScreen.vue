@@ -62,6 +62,9 @@
               <el-button @click="playPrevious" :disabled="!hasPrevious">
                 上一个
               </el-button>
+              <el-button @click="toggleLoop" :type="isLooping ? 'success' : 'default'">
+                {{ isLooping ? '循环开' : '循环关' }}
+              </el-button>
               <el-button @click="playNext" :disabled="!hasNext">
                 下一个
               </el-button>
@@ -110,6 +113,7 @@ export default {
       
       playlist: [],
       currentVideoIndex: -1,
+      isLooping: false,
     }
   },
   computed: {
@@ -139,7 +143,10 @@ export default {
     playVideo(index) {
       this.currentVideoIndex = index
       this.$nextTick(() => {
-        this.$refs.videoPlayer.play()
+        if (this.$refs.videoPlayer) {
+          this.$refs.videoPlayer.loop = this.isLooping
+          this.$refs.videoPlayer.play()
+        }
       })
     },
     removeVideo(index) {
@@ -167,8 +174,16 @@ export default {
         this.playVideo(this.currentVideoIndex - 1)
       }
     },
+    toggleLoop() {
+      this.isLooping = !this.isLooping
+      if (this.$refs.videoPlayer) {
+        this.$refs.videoPlayer.loop = this.isLooping
+      }
+    },
     handleVideoEnd() {
-      if (this.hasNext) {
+      if (this.isLooping) {
+        this.$refs.videoPlayer.play()
+      } else if (this.hasNext) {
         this.playNext()
       }
     }
