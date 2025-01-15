@@ -1,6 +1,16 @@
 <template>
   <div class="big-screen">
-    <h1>年会节目直播大屏</h1>
+    <div class="header-container">
+      <h1>年会节目直播大屏</h1>
+      <el-button 
+        size="small" 
+        type="primary" 
+        @click="toggleFullscreen"
+        class="fullscreen-btn"
+      >
+        {{ isFullscreen ? '退出全屏' : '全屏显示' }}
+      </el-button>
+    </div>
     <div class="screen-content">
       <div class="rank-section">
         <h2>火箭排行榜</h2>
@@ -128,6 +138,7 @@ export default {
       currentVideoIndex: -1,
       isLooping: false,
       showPlaylist: true,
+      isFullscreen: false,
     }
   },
   computed: {
@@ -203,7 +214,45 @@ export default {
     },
     togglePlaylist() {
       this.showPlaylist = !this.showPlaylist
+    },
+    toggleFullscreen() {
+      if (!this.isFullscreen) {
+        const element = document.documentElement
+        if (element.requestFullscreen) {
+          element.requestFullscreen()
+        } else if (element.webkitRequestFullscreen) {
+          element.webkitRequestFullscreen()
+        } else if (element.msRequestFullscreen) {
+          element.msRequestFullscreen()
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen()
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen()
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen()
+        }
+      }
+    },
+    handleFullscreenChange() {
+      this.isFullscreen = !!document.fullscreenElement || 
+                         !!document.webkitFullscreenElement || 
+                         !!document.mozFullScreenElement || 
+                         !!document.msFullscreenElement
     }
+  },
+  mounted() {
+    document.addEventListener('fullscreenchange', this.handleFullscreenChange)
+    document.addEventListener('webkitfullscreenchange', this.handleFullscreenChange)
+    document.addEventListener('mozfullscreenchange', this.handleFullscreenChange)
+    document.addEventListener('MSFullscreenChange', this.handleFullscreenChange)
+  },
+  beforeUnmount() {
+    document.removeEventListener('fullscreenchange', this.handleFullscreenChange)
+    document.removeEventListener('webkitfullscreenchange', this.handleFullscreenChange)
+    document.removeEventListener('mozfullscreenchange', this.handleFullscreenChange)
+    document.removeEventListener('MSFullscreenChange', this.handleFullscreenChange)
   }
 }
 </script>
@@ -389,6 +438,29 @@ h2 {
   margin-left: 5px;
 }
 
+.fullscreen-button {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 5px;
+  border-radius: 4px;
+}
+
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.fullscreen-btn {
+  position: absolute;
+  right: 20px;
+}
+
 /* 移动端适配 */
 @media screen and (max-width: 768px) {
   .big-screen {
@@ -471,6 +543,15 @@ h2 {
 
   .toggle-button {
     bottom: 10px;
+    right: 10px;
+  }
+
+  .fullscreen-button {
+    top: 10px;
+    right: 10px;
+  }
+
+  .fullscreen-btn {
     right: 10px;
   }
 }
