@@ -1,5 +1,5 @@
 <template>
-  <div class="big-screen">
+  <div class="big-screen" ref="bigScreen">
     <div class="header-container">
       <h1>年会节目直播大屏</h1>
       <el-button 
@@ -216,8 +216,9 @@ export default {
       this.showPlaylist = !this.showPlaylist
     },
     toggleFullscreen() {
+      const element = this.$refs.bigScreen
+      
       if (!this.isFullscreen) {
-        const element = document.documentElement
         if (element.requestFullscreen) {
           element.requestFullscreen()
         } else if (element.webkitRequestFullscreen) {
@@ -569,5 +570,23 @@ h2 {
   .rank-section, .gift-section, .video-section {
     min-height: 180px;
   }
+}
+
+/* 添加全屏时的样式 */
+.big-screen:fullscreen {
+  padding: 20px;
+  background: #1a1a1a;
+}
+
+/* 兼容 webkit 浏览器 */
+.big-screen:-webkit-full-screen {
+  padding: 20px;
+  background: #1a1a1a;
+}
+
+/* 兼容 MS 浏览器 */
+.big-screen:-ms-fullscreen {
+  padding: 20px;
+  background: #1a1a1a;
 }
 </style> 
