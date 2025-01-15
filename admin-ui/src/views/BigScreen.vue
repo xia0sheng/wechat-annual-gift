@@ -18,25 +18,28 @@
           <video
             ref="videoPlayer"
             class="video-player"
+            :class="{ 'full-height': !showPlaylist }"
             :src="currentVideo"
             controls
             @ended="handleVideoEnd"
           ></video>
           
-          <div class="video-controls">
+          <div class="video-controls" v-show="showPlaylist">
             <div class="playlist-header">
               <h3>播放列表</h3>
-              <input
-                type="file"
-                ref="fileInput"
-                accept="video/*"
-                multiple
-                @change="handleFileSelect"
-                style="display: none"
-              >
-              <el-button size="small" @click="$refs.fileInput.click()">
-                添加视频
-              </el-button>
+              <div>
+                <input
+                  type="file"
+                  ref="fileInput"
+                  accept="video/*"
+                  multiple
+                  @change="handleFileSelect"
+                  style="display: none"
+                >
+                <el-button size="small" @click="$refs.fileInput.click()">
+                  添加视频
+                </el-button>
+              </div>
             </div>
             
             <div class="playlist">
@@ -69,6 +72,16 @@
                 下一个
               </el-button>
             </div>
+          </div>
+
+          <div class="toggle-button">
+            <el-button 
+              size="small" 
+              type="primary" 
+              @click="togglePlaylist"
+            >
+              {{ showPlaylist ? '隐藏列表' : '显示列表' }}
+            </el-button>
           </div>
         </div>
       </div>
@@ -114,6 +127,7 @@ export default {
       playlist: [],
       currentVideoIndex: -1,
       isLooping: false,
+      showPlaylist: true,
     }
   },
   computed: {
@@ -186,6 +200,9 @@ export default {
       } else if (this.hasNext) {
         this.playNext()
       }
+    },
+    togglePlaylist() {
+      this.showPlaylist = !this.showPlaylist
     }
   }
 }
@@ -234,6 +251,7 @@ h1 {
   height: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .video-player {
@@ -241,6 +259,21 @@ h1 {
   height: 70%;
   background: #000;
   object-fit: contain;
+  transition: height 0.3s ease;
+}
+
+.video-player.full-height {
+  height: 100%;
+}
+
+.toggle-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 5px;
+  border-radius: 4px;
 }
 
 .video-controls {
@@ -250,6 +283,7 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  transition: all 0.3s ease;
 }
 
 .playlist-header {
@@ -419,6 +453,10 @@ h2 {
     height: 60%;
   }
 
+  .video-player.full-height {
+    height: 100%;
+  }
+
   .video-controls {
     height: 40%;
   }
@@ -429,6 +467,11 @@ h2 {
 
   .video-name {
     font-size: 12px;
+  }
+
+  .toggle-button {
+    bottom: 10px;
+    right: 10px;
   }
 }
 
