@@ -15,8 +15,57 @@
 
       <div class="video-section">
         <div class="video-container">
-          <div class="video-placeholder">
-            视频播放区域
+          <video
+            ref="videoPlayer"
+            class="video-player"
+            :src="currentVideo"
+            controls
+            @ended="handleVideoEnd"
+          ></video>
+          
+          <div class="video-controls">
+            <div class="playlist-header">
+              <h3>播放列表</h3>
+              <input
+                type="file"
+                ref="fileInput"
+                accept="video/*"
+                multiple
+                @change="handleFileSelect"
+                style="display: none"
+              >
+              <el-button size="small" @click="$refs.fileInput.click()">
+                添加视频
+              </el-button>
+            </div>
+            
+            <div class="playlist">
+              <div
+                v-for="(video, index) in playlist"
+                :key="index"
+                class="playlist-item"
+                :class="{ active: currentVideoIndex === index }"
+                @click="playVideo(index)"
+              >
+                <span class="video-name">{{ video.name }}</span>
+                <el-button
+                  size="small"
+                  type="danger"
+                  @click.stop="removeVideo(index)"
+                >
+                  删除
+                </el-button>
+              </div>
+            </div>
+            
+            <div class="video-controls-buttons">
+              <el-button @click="playPrevious" :disabled="!hasPrevious">
+                上一个
+              </el-button>
+              <el-button @click="playNext" :disabled="!hasNext">
+                下一个
+              </el-button>
+            </div>
           </div>
         </div>
       </div>
@@ -57,7 +106,71 @@ export default {
         { time: '20:13:18', sender: '王五', programName: '相声《快乐生活》', giftType: '🚀火箭' },
         { time: '20:12:05', sender: '赵六', programName: '魔术《魔法时刻》', giftType: '🚀火箭' },
         { time: '20:11:55', sender: '孙七', programName: '小品《欢乐时光》', giftType: '🚀火箭' },
-      ]
+      ],
+      
+      playlist: [],
+      currentVideoIndex: -1,
+    }
+  },
+  computed: {
+    currentVideo() {
+      return this.currentVideoIndex >= 0 ? URL.createObjectURL(this.playlist[this.currentVideoIndex].file) : ''
+    },
+    hasNext() {
+      return this.currentVideoIndex < this.playlist.length - 1
+    },
+    hasPrevious() {
+      return this.currentVideoIndex > 0
+    }
+  },
+  methods: {
+    handleFileSelect(event) {
+      const files = Array.from(event.target.files)
+      files.forEach(file => {
+        this.playlist.push({
+          name: file.name,
+          file: file
+        })
+      })
+      if (this.currentVideoIndex === -1 && this.playlist.length > 0) {
+        this.playVideo(0)
+      }
+    },
+    playVideo(index) {
+      this.currentVideoIndex = index
+      this.$nextTick(() => {
+        this.$refs.videoPlayer.play()
+      })
+    },
+    removeVideo(index) {
+      if (index === this.currentVideoIndex) {
+        this.$refs.videoPlayer.pause()
+        if (this.hasNext) {
+          this.playNext()
+        } else if (this.hasPrevious) {
+          this.playPrevious()
+        } else {
+          this.currentVideoIndex = -1
+        }
+      } else if (index < this.currentVideoIndex) {
+        this.currentVideoIndex--
+      }
+      this.playlist.splice(index, 1)
+    },
+    playNext() {
+      if (this.hasNext) {
+        this.playVideo(this.currentVideoIndex + 1)
+      }
+    },
+    playPrevious() {
+      if (this.hasPrevious) {
+        this.playVideo(this.currentVideoIndex - 1)
+      }
+    },
+    handleVideoEnd() {
+      if (this.hasNext) {
+        this.playNext()
+      }
     }
   }
 }
@@ -104,6 +217,64 @@ h1 {
 .video-container {
   width: 100%;
   height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.video-player {
+  width: 100%;
+  height: 70%;
+  background: #000;
+  object-fit: contain;
+}
+
+.video-controls {
+  height: 30%;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.playlist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.playlist {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.playlist-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  margin: 4px 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.playlist-item.active {
+  background: rgba(64, 158, 255, 0.2);
+}
+
+.video-name {
+  flex: 1;
+  margin-right: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.video-controls-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
 }
 
 .rank-list, .gift-list {
@@ -169,18 +340,6 @@ h2 {
   margin-left: 5px;
 }
 
-.video-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  color: #666;
-  background: #111;
-  border-radius: 8px;
-}
-
 /* 移动端适配 */
 @media screen and (max-width: 768px) {
   .big-screen {
@@ -207,7 +366,7 @@ h2 {
   }
 
   .video-section {
-    order: 2; /* 调整视频区域在移动端的显示顺序 */
+    order: 2;
     height: 200px;
   }
 
@@ -239,6 +398,22 @@ h2 {
   h2 {
     font-size: 16px;
     margin-bottom: 10px;
+  }
+
+  .video-player {
+    height: 60%;
+  }
+
+  .video-controls {
+    height: 40%;
+  }
+
+  .playlist-item {
+    padding: 6px;
+  }
+
+  .video-name {
+    font-size: 12px;
   }
 }
 
