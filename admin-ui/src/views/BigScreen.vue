@@ -38,11 +38,15 @@
             <transition name="gift">
               <div class="gift-box" v-if="showGift">
                 <div class="gift-info">
-                  <div class="gift-avatar">👤</div>
+                  <div class="gift-avatar">
+                    <img :src="giftData.senderAvatar || '/default-avatar.png'" alt="avatar">
+                  </div>
                   <div class="gift-content">
-                    <span class="sender">{{ giftData.sender }}</span>
+                    <span class="sender">{{ giftData.realName }}</span>
                     <div class="gift-text">
-                      送出了 <span class="gift-icon">🚀</span>
+                      送出了 
+                      <span class="gift-icon">🚀</span>
+                      <span class="gift-count">×{{ giftData.giftCount }}</span>
                     </div>
                   </div>
                 </div>
@@ -271,12 +275,16 @@ export default {
                          !!document.msFullscreenElement
     },
     showGiftEffect(gift) {
-      this.giftData = gift
-      this.showGift = true
+      this.giftData = {
+        senderAvatar: gift.senderAvatar,
+        realName: gift.realName,
+        giftCount: gift.giftCount || 1
+      };
+      this.showGift = true;
       
       setTimeout(() => {
-        this.showGift = false
-      }, 3000)
+        this.showGift = false;
+      }, 3000);
     },
     testEffects() {
       this.showGiftEffect({
@@ -311,8 +319,9 @@ export default {
           console.log('Received message:', data)
           if (data.type === 'gift' && data.giftType === 'rocket') {
             this.showGiftEffect({
-              sender: data.sender,
-              type: '🚀火箭'
+              senderAvatar: data.senderAvatar,
+              realName: data.realName,
+              giftCount: data.giftCount
             })
             
             this.updateRankList(data)
@@ -716,33 +725,45 @@ h2 {
   top: 0;
   bottom: 0;
   pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  overflow: hidden;
 }
 
 .gift-box {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.7);
   border-radius: 50px;
   padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
 }
 
 .gift-info {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 15px;
 }
 
 .gift-avatar {
-  font-size: 24px;
-  background: rgba(255, 255, 255, 0.1);
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  padding: 5px;
+  overflow: hidden;
+  border: 2px solid #ffd700;
+}
+
+.gift-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .gift-content {
   display: flex;
   flex-direction: column;
+  gap: 4px;
 }
 
 .sender {
@@ -755,41 +776,49 @@ h2 {
   color: #fff;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
+  font-size: 14px;
 }
 
 .gift-icon {
   font-size: 24px;
 }
 
+.gift-count {
+  color: #ffd700;
+  font-weight: bold;
+  font-size: 18px;
+}
+
 /* 礼物动画 */
 .gift-enter-active {
-  animation: giftIn 0.5s;
+  animation: giftAnimation 3s ease-out forwards;
 }
 
 .gift-leave-active {
-  animation: giftOut 0.5s;
+  animation: giftAnimation 3s ease-out forwards;
 }
 
-@keyframes giftIn {
-  from {
-    transform: translateY(100%);
+@keyframes giftAnimation {
+  0% {
+    bottom: -100px;
     opacity: 0;
+    transform: translateX(-50%) scale(0.8);
   }
-  to {
-    transform: translateY(0);
+  15% {
+    bottom: 100px;
     opacity: 1;
+    transform: translateX(-50%) scale(1);
   }
-}
-
-@keyframes giftOut {
-  from {
-    transform: translateY(0);
+  75% {
+    bottom: 100px;
     opacity: 1;
+    transform: translateX(-50%) scale(1);
   }
-  to {
-    transform: translateY(-100%);
+  100% {
+    bottom: 120vh;
     opacity: 0;
+    transform: translateX(-50%) scale(0.8) rotate(10deg);
   }
 }
 </style> 
