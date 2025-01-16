@@ -172,6 +172,7 @@ export default {
       },
       ws: null,
       processedMessageIds: new Set(),
+      wsReconnectTimer: null
     }
   },
   computed: {
@@ -295,6 +296,11 @@ export default {
       })
     },
     initWebSocket() {
+      if (this.ws) {
+        this.ws.close();
+        this.ws = null;
+      }
+
       const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${wsProtocol}//${location.host}/ws/gift`;
       
@@ -302,20 +308,26 @@ export default {
       
       this.ws.onopen = () => {
         console.log('WebSocket connected');
+        if (this.wsReconnectTimer) {
+          clearTimeout(this.wsReconnectTimer);
+          this.wsReconnectTimer = null;
+        }
       };
       
       this.ws.onmessage = this.handleWebSocketMessage;
       
       this.ws.onclose = () => {
-        console.log('WebSocket disconnected, trying to reconnect...')
-        setTimeout(() => {
-          this.initWebSocket()
-        }, 3000)
-      }
+        console.log('WebSocket disconnected, trying to reconnect...');
+        if (!this.wsReconnectTimer) {
+          this.wsReconnectTimer = setTimeout(() => {
+            this.initWebSocket();
+          }, 3000);
+        }
+      };
       
       this.ws.onerror = (error) => {
-        console.error('WebSocket error:', error)
-      }
+        console.error('WebSocket error:', error);
+      };
     },
     handleWebSocketMessage(event) {
       try {
@@ -407,6 +419,9 @@ export default {
     
     if (this.ws) {
       this.ws.close()
+    }
+    if (this.wsReconnectTimer) {
+      clearTimeout(this.wsReconnectTimer)
     }
   }
 }
