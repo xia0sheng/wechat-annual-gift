@@ -285,14 +285,30 @@ export default {
       })
     },
     initWebSocket() {
-      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
-      const wsUrl = `${protocol}//${location.host}/ws/gift`
+      const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
+      const wsUrl = `${wsProtocol}//${location.host}/ws/gift`
       
       this.ws = new WebSocket(wsUrl)
+      
+      this.ws.onopen = () => {
+        console.log('WebSocket connected')
+      }
+      
+      this.ws.onclose = () => {
+        console.log('WebSocket disconnected, trying to reconnect...')
+        setTimeout(() => {
+          this.initWebSocket()
+        }, 3000)
+      }
+      
+      this.ws.onerror = (error) => {
+        console.error('WebSocket error:', error)
+      }
       
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data)
+          console.log('Received message:', data)
           if (data.type === 'gift' && data.giftType === 'rocket') {
             this.showGiftEffect({
               sender: data.sender,
@@ -305,12 +321,6 @@ export default {
         } catch (error) {
           console.error('WebSocket message error:', error)
         }
-      }
-      
-      this.ws.onclose = () => {
-        setTimeout(() => {
-          this.initWebSocket()
-        }, 3000)
       }
     },
     updateRankList(giftData) {

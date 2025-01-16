@@ -48,9 +48,15 @@ const broadcastGift = (giftData) => {
     ...giftData
   });
 
+  console.log('Broadcasting gift:', message);
+  console.log('Connected clients:', clients.size);
+
   clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(message);
+      console.log('Message sent to client');
+    } else {
+      console.log('Client not ready:', client.readyState);
     }
   });
 };
@@ -86,6 +92,25 @@ router.post('/send-gift', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Send gift error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// 添加测试接口
+router.post('/test-gift', async (req, res) => {
+  try {
+    // 发送测试礼物消息
+    broadcastGift({
+      type: 'gift',
+      sender: '测试用户',
+      programName: '测试节目',
+      giftType: 'rocket',
+      timestamp: Date.now()
+    });
+
+    res.json({ success: true, message: '测试礼物已发送' });
+  } catch (error) {
+    console.error('Test gift error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
