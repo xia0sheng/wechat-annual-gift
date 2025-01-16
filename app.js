@@ -1,13 +1,9 @@
 const express = require('express');
 const http = require('http');
 const { initDB } = require('./config/database');
-const { router: mainRouter, initWebSocket } = require('./routes');
 
 const app = express();
 const server = http.createServer(app);
-
-// 初始化 WebSocket
-const wss = initWebSocket(server);
 
 // 错误处理
 process.on('uncaughtException', (err) => {
@@ -34,18 +30,22 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 原有路由
+// 导入路由
 const { router: wechatAuthRouter } = require('./routes/wechat-auth');
 const usersRouter = require('./routes/users');
 const programsRouter = require('./routes/programs');
+const { router: bigScreenRouter, initWebSocket } = require('./routes/big-screen');
 
+// 初始化 WebSocket
+const wss = initWebSocket(server);
+
+// 路由注册 - 注意顺序
 app.use('/wechat', wechatAuthRouter);
 app.use('/users', usersRouter);
 app.use('/programs', programsRouter);
+app.use('/api/big-screen', bigScreenRouter);
 
-// 新添加的 big-screen 路由
-app.use('/', mainRouter);
-
+// 默认路由
 app.get('/', (req, res) => {
     res.send('欢迎访问微信授权服务！请访问 /wechat/auth 开始授权。');
 });
