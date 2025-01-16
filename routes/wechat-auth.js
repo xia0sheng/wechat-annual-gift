@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { pool } = require('../config/database');
 require('dotenv').config();
 
 const router = express.Router();
