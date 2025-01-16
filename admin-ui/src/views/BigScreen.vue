@@ -274,11 +274,18 @@ export default {
       this.$refs.giftEffectArea?.appendChild(giftElement)
       
       setTimeout(() => {
-        giftElement.classList.add('fade-out')
+        giftElement.style.bottom = '100px'
+        giftElement.style.opacity = '1'
+      }, 50)
+      
+      setTimeout(() => {
+        giftElement.style.opacity = '0'
+        giftElement.style.transform = 'translateX(-50%) translateY(-50px)'
+        
         setTimeout(() => {
           giftElement.remove()
         }, 500)
-      }, 2500)
+      }, 3000)
     },
     testEffects() {
       this.showGiftEffect({
@@ -653,7 +660,8 @@ h2 {
   padding: 10px 20px;
   display: flex;
   align-items: center;
-  animation: giftSlideUp 0.5s ease-out forwards;
+  opacity: 0;
+  transition: all 0.5s ease;
 }
 
 .gift-info {
@@ -689,7 +697,6 @@ h2 {
 
 .gift-icon {
   font-size: 24px;
-  animation: giftSpin 1s linear infinite;
 }
 
 .fade-out {
