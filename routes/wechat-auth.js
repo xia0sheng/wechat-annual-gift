@@ -111,11 +111,12 @@ const authMiddleware = async (req, res, next) => {
             return res.status(401).json({ message: '未授权' });
         }
 
+        // 先验证 token 并获取基本信息
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
         // 从数据库获取完整的用户信息
         const [[user]] = await pool.query(`
-            SELECT id, username, nickname, real_name, headimgurl, role, rockets
+            SELECT id, username, nickname, real_name, headimgurl, role, rockets, openid
             FROM users 
             WHERE id = ?
         `, [decoded.id]);
@@ -124,7 +125,14 @@ const authMiddleware = async (req, res, next) => {
             return res.status(401).json({ message: '用户不存在' });
         }
 
-        req.user = user; // 使用完整的用户信息
+        // 合并 decoded 中的关键信息和数据库中的用户信息
+        req.user = {
+            ...user,
+            id: decoded.id,        // 保持原有的 id
+            openid: decoded.openid, // 保持原有的 openid
+            role: decoded.role     // 保持原有的 role
+        };
+
         next();
     } catch (error) {
         console.error('Auth middleware error:', error);
