@@ -653,8 +653,7 @@ h2 {
   padding: 10px 20px;
   display: flex;
   align-items: center;
-  animation: giftSlideUp 0.5s ease-out forwards,
-             giftFloat 2s ease-in-out;
+  animation: giftSlideUp 0.5s ease-out forwards;
 }
 
 .gift-info {
@@ -698,22 +697,27 @@ h2 {
 }
 
 @keyframes giftSlideUp {
-  from {
+  0% {
     bottom: -100px;
     opacity: 0;
+    transform: translateX(-50%) scale(0.8);
   }
-  to {
-    bottom: 50px;
+  100% {
+    bottom: 100px;
     opacity: 1;
+    transform: translateX(-50%) scale(1);
   }
 }
 
 @keyframes giftFloat {
-  0%, 100% {
+  0% {
     transform: translateX(-50%) translateY(0);
   }
   50% {
     transform: translateX(-50%) translateY(-20px);
+  }
+  100% {
+    transform: translateX(-50%) translateY(0);
   }
 }
 
@@ -727,13 +731,20 @@ h2 {
 }
 
 @keyframes fadeOut {
-  from {
+  0% {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
-  to {
+  100% {
     opacity: 0;
     transform: translateX(-50%) translateY(-50px);
   }
+}
+
+/* 添加组合动画的类 */
+.gift-animation.active {
+  animation: 
+    giftSlideUp 0.5s ease-out forwards,
+    giftFloat 2s ease-in-out infinite;
 }
 </style> 
