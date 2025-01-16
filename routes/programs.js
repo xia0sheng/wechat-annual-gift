@@ -121,12 +121,12 @@ router.post('/:id/gift', authMiddleware, async (req, res) => {
         // 更新火箭数量
         await Program.giftRocket(req.params.id, req.user.id, rockets);
 
-        // 广播礼物消息到大屏
+        // 广播礼物消息到大屏，使用 nickname 替代 realname
         broadcastGift({
             type: 'gift',
             sender: req.user.nickname,
             senderAvatar: req.user.headimgurl,
-            realName: req.user.realname || req.user.nickname,
+            realName: req.user.nickname, // 只使用 nickname
             programName: program.name,
             giftType: 'rocket',
             giftCount: rockets,

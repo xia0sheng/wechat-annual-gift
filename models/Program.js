@@ -53,8 +53,7 @@ class Program {
                         'rockets', rg.rockets,
                         'created_at', rg.created_at,
                         'nickname', u.nickname,
-                        'headimgurl', u.headimgurl,
-                        'realname', u.realname
+                        'headimgurl', u.headimgurl
                     )
                 ) as gifts
             FROM programs p
