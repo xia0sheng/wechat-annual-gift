@@ -115,4 +115,8 @@ router.post('/test-gift', async (req, res) => {
   }
 });
 
-module.exports = { router, initWebSocket }; 
+module.exports = { 
+  router, 
+  initWebSocket,
+  broadcastGift
+}; 

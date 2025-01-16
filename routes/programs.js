@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Program = require('../models/Program');
 const { authMiddleware, adminMiddleware } = require('./wechat-auth');
+const { User } = require('../models/user');
+const { broadcastGift } = require('./big-screen');
 
 // 获取节目列表
 router.get('/', async (req, res) => {
@@ -120,6 +122,47 @@ router.post('/:id/gift', authMiddleware, async (req, res) => {
             success: false,
             message: error.message || '赠送火箭失败'
         });
+    }
+});
+
+// 修改送礼物的路由
+router.post('/:id/send-gift', authMiddleware, async (req, res) => {
+    try {
+        const program = await Program.findById(req.params.id);
+        if (!program) {
+            return res.status(404).json({ message: '节目不存在' });
+        }
+
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ message: '用户不存在' });
+        }
+
+        // 更新礼物记录
+        program.gifts.push({
+            type: 'rocket',
+            sender: user._id,
+            senderName: user.nickname || user.username,
+            timestamp: new Date()
+        });
+        await program.save();
+
+        // 广播礼物消息到大屏
+        broadcastGift({
+            sender: user.nickname || user.username,
+            programName: program.name,
+            giftType: 'rocket',
+            timestamp: Date.now()
+        });
+
+        res.json({ 
+            success: true, 
+            message: '礼物发送成功',
+            gifts: program.gifts 
+        });
+    } catch (error) {
+        console.error('发送礼物错误:', error);
+        res.status(500).json({ message: '服务器错误' });
     }
 });
 
