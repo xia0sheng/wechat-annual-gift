@@ -165,7 +165,8 @@ export default {
       showGift: false,
       giftData: {
         sender: ''
-      }
+      },
+      ws: null,
     }
   },
   computed: {
@@ -282,6 +283,67 @@ export default {
         sender: '测试用户',
         type: '🚀火箭'
       })
+    },
+    initWebSocket() {
+      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
+      const wsUrl = `${protocol}//${location.host}/ws/gift`
+      
+      this.ws = new WebSocket(wsUrl)
+      
+      this.ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          if (data.type === 'gift' && data.giftType === 'rocket') {
+            this.showGiftEffect({
+              sender: data.sender,
+              type: '🚀火箭'
+            })
+            
+            this.updateRankList(data)
+            this.updateGiftRecords(data)
+          }
+        } catch (error) {
+          console.error('WebSocket message error:', error)
+        }
+      }
+      
+      this.ws.onclose = () => {
+        setTimeout(() => {
+          this.initWebSocket()
+        }, 3000)
+      }
+    },
+    updateRankList(giftData) {
+      const index = this.rankList.findIndex(item => 
+        item.programName === giftData.programName
+      )
+      
+      if (index !== -1) {
+        this.rankList[index].rocketCount++
+        this.rankList.sort((a, b) => b.rocketCount - a.rocketCount)
+      } else {
+        this.rankList.push({
+          programName: giftData.programName,
+          rocketCount: 1
+        })
+      }
+    },
+    updateGiftRecords(giftData) {
+      const now = new Date()
+      const time = `${now.getHours().toString().padStart(2, '0')}:${
+        now.getMinutes().toString().padStart(2, '0')}:${
+        now.getSeconds().toString().padStart(2, '0')}`
+      
+      this.giftRecords.unshift({
+        time,
+        sender: giftData.sender,
+        programName: giftData.programName,
+        giftType: '🚀火箭'
+      })
+      
+      if (this.giftRecords.length > 20) {
+        this.giftRecords.pop()
+      }
     }
   },
   mounted() {
@@ -289,12 +351,18 @@ export default {
     document.addEventListener('webkitfullscreenchange', this.handleFullscreenChange)
     document.addEventListener('mozfullscreenchange', this.handleFullscreenChange)
     document.addEventListener('MSFullscreenChange', this.handleFullscreenChange)
+    
+    this.initWebSocket()
   },
   beforeUnmount() {
     document.removeEventListener('fullscreenchange', this.handleFullscreenChange)
     document.removeEventListener('webkitfullscreenchange', this.handleFullscreenChange)
     document.removeEventListener('mozfullscreenchange', this.handleFullscreenChange)
     document.removeEventListener('MSFullscreenChange', this.handleFullscreenChange)
+    
+    if (this.ws) {
+      this.ws.close()
+    }
   }
 }
 </script>

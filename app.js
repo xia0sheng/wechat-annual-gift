@@ -1,5 +1,12 @@
 const express = require('express');
-const { initDB } = require('./config/database');
+const http = require('http');
+const { router, initWebSocket } = require('./routes');
+
+const app = express();
+const server = http.createServer(app);
+
+// 初始化 WebSocket
+const wss = initWebSocket(server);
 
 // 错误处理
 process.on('uncaughtException', (err) => {
@@ -15,8 +22,6 @@ initDB().catch(err => {
     console.error('数据库初始化失败:', err);
     process.exit(1);
 });
-
-const app = express();
 
 // 请求日志中间件
 app.use((req, res, next) => {
@@ -55,7 +60,10 @@ app.use((req, res) => {
     res.status(404).send('404 - 未找到页面');
 });
 
+app.use('/', router);
+
+// 启动服务器
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`服务器运行在端口 ${PORT}`);
+server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
