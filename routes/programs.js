@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const Program = require('../models/Program');
 const { authMiddleware, adminMiddleware } = require('./wechat-auth');
-const { User } = require('../models/user');
 const { broadcastGift } = require('./big-screen');
 
 // 获取节目列表
