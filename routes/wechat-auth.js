@@ -113,18 +113,8 @@ const authMiddleware = async (req, res, next) => {
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
-        // 获取完整的用户信息
-        const [[user]] = await pool.query(`
-            SELECT id, username, nickname, realname, headimgurl, role, rockets
-            FROM users 
-            WHERE id = ?
-        `, [decoded.id]);
-
-        if (!user) {
-            return res.status(401).json({ message: '用户不存在' });
-        }
-
-        req.user = user;
+        // 这里改动太大，直接使用 decoded 的用户信息即可
+        req.user = decoded;
         next();
     } catch (error) {
         console.error('Auth middleware error:', error);
