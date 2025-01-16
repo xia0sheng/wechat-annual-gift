@@ -38,9 +38,6 @@
             <div class="gift-effect-area" ref="giftEffectArea">
               <!-- 礼物特效将在这里动态生成 -->
             </div>
-            <div class="danmaku-area" ref="danmakuArea">
-              <!-- 弹幕将在这里动态生成 -->
-            </div>
           </div>
 
           <div class="video-controls" v-show="showPlaylist">
@@ -155,8 +152,6 @@ export default {
       isLooping: false,
       showPlaylist: true,
       isFullscreen: false,
-      
-      danmakuEnabled: true,
     }
   },
   computed: {
@@ -266,44 +261,30 @@ export default {
       
       giftElement.innerHTML = `
         <div class="gift-info">
-          <span class="sender">${gift.sender}</span>
-          送出了
-          <span class="gift">${gift.type}</span>
+          <div class="gift-avatar">👤</div>
+          <div class="gift-content">
+            <span class="sender">${gift.sender}</span>
+            <div class="gift-text">
+              送出了 <span class="gift-icon">🚀</span>
+            </div>
+          </div>
         </div>
       `
-      
-      if (gift.type === '🚀火箭') {
-        giftElement.classList.add('rocket-animation')
-      }
       
       this.$refs.giftEffectArea?.appendChild(giftElement)
       
       setTimeout(() => {
-        giftElement.remove()
-      }, 3000)
-    },
-    addDanmaku(message) {
-      if (!this.danmakuEnabled) return
-      
-      const danmaku = document.createElement('div')
-      danmaku.className = 'danmaku'
-      danmaku.textContent = message
-      
-      const top = Math.random() * 80 + 10
-      danmaku.style.top = `${top}%`
-      
-      this.$refs.danmakuArea?.appendChild(danmaku)
-      
-      setTimeout(() => {
-        danmaku.remove()
-      }, 8000)
+        giftElement.classList.add('fade-out')
+        setTimeout(() => {
+          giftElement.remove()
+        }, 500)
+      }, 2500)
     },
     testEffects() {
       this.showGiftEffect({
         sender: '测试用户',
         type: '🚀火箭'
       })
-      this.addDanmaku('这是一条测试弹幕消息')
     }
   },
   mounted() {
@@ -653,69 +634,106 @@ h2 {
   background: #1a1a1a;
 }
 
-/* 添加弹幕相关样式 */
-.danmaku-layer {
+/* 修改礼物特效相关样式 */
+.gift-effect-area {
   position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
   overflow: hidden;
 }
 
-.gift-effect-area {
-  position: absolute;
-  width: 100%;
-  height: 40%;
-  top: 30%;
-  overflow: hidden;
-}
-
-.danmaku-area {
-  position: absolute;
-  width: 100%;
-  height: 80%;
-  top: 10%;
-  overflow: hidden;
-}
-
 .gift-animation {
   position: absolute;
-  animation: giftSlide 3s ease-in-out;
-  color: #fff;
+  left: 50%;
+  bottom: -100px;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 50px;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  animation: giftSlideUp 0.5s ease-out forwards,
+             giftFloat 2s ease-in-out;
+}
+
+.gift-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gift-avatar {
   font-size: 24px;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  padding: 5px;
 }
 
-.rocket-animation {
-  animation: rocketFly 3s ease-in-out;
+.gift-content {
+  display: flex;
+  flex-direction: column;
 }
 
-.danmaku {
-  position: absolute;
-  white-space: nowrap;
-  animation: danmakuMove 8s linear;
+.sender {
+  color: #ffd700;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.gift-text {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   color: #fff;
-  font-size: 20px;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 
-@keyframes giftSlide {
-  0% { left: -100%; opacity: 0; }
-  10% { left: 10%; opacity: 1; }
-  90% { left: 10%; opacity: 1; }
-  100% { left: -100%; opacity: 0; }
+.gift-icon {
+  font-size: 24px;
+  animation: giftSpin 1s linear infinite;
 }
 
-@keyframes rocketFly {
-  0% { transform: translateX(-100%) scale(0.5); }
-  50% { transform: translateX(0) scale(1); }
-  100% { transform: translateX(100%) scale(0.5); }
+.fade-out {
+  animation: fadeOut 0.5s ease-out forwards;
 }
 
-@keyframes danmakuMove {
-  from { transform: translateX(100%); }
-  to { transform: translateX(-100%); }
+@keyframes giftSlideUp {
+  from {
+    bottom: -100px;
+    opacity: 0;
+  }
+  to {
+    bottom: 50px;
+    opacity: 1;
+  }
+}
+
+@keyframes giftFloat {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-20px);
+  }
+}
+
+@keyframes giftSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-50px);
+  }
 }
 </style> 
