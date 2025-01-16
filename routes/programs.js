@@ -3,7 +3,7 @@ const router = express.Router();
 const Program = require('../models/Program');
 const { authMiddleware, adminMiddleware } = require('./wechat-auth');
 const { broadcastGift } = require('./big-screen');
-const pool = require('../db/pool');
+const { pool } = require('../config/database');
 
 // 获取节目列表
 router.get('/', async (req, res) => {
