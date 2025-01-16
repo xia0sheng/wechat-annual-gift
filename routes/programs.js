@@ -111,7 +111,13 @@ router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
 router.post('/:id/gift', authMiddleware, async (req, res) => {
     try {
         const { rockets } = req.body;
-        console.log('Current user:', req.user);
+        
+        // 获取完整的用户信息
+        const [[user]] = await pool.query(`
+            SELECT id, nickname, real_name, headimgurl
+            FROM users 
+            WHERE id = ?
+        `, [req.user.id]);
 
         const program = await Program.findById(req.params.id);
         if (!program) {
@@ -121,12 +127,12 @@ router.post('/:id/gift', authMiddleware, async (req, res) => {
         // 更新火箭数量
         await Program.giftRocket(req.params.id, req.user.id, rockets);
 
-        // 广播礼物消息到大屏，使用 nickname 替代 realname
+        // 使用完整的用户信息
         broadcastGift({
             type: 'gift',
-            sender: req.user.nickname,
-            senderAvatar: req.user.headimgurl,
-            realName: req.user.nickname, // 只使用 nickname
+            sender: user.nickname,
+            senderAvatar: user.headimgurl,
+            realName: user.real_name || user.nickname, // 优先使用真实姓名
             programName: program.name,
             giftType: 'rocket',
             giftCount: rockets,
