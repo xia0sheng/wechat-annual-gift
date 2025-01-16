@@ -34,10 +34,20 @@
             @ended="handleVideoEnd"
           ></video>
           
-          <div class="danmaku-layer" v-show="currentVideo">
-            <div class="gift-effect-area" ref="giftEffectArea">
-              <!-- 礼物特效将在这里动态生成 -->
-            </div>
+          <div class="gift-container" v-show="currentVideo">
+            <transition name="gift">
+              <div class="gift-box" v-if="showGift">
+                <div class="gift-info">
+                  <div class="gift-avatar">👤</div>
+                  <div class="gift-content">
+                    <span class="sender">{{ giftData.sender }}</span>
+                    <div class="gift-text">
+                      送出了 <span class="gift-icon">🚀</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </transition>
           </div>
 
           <div class="video-controls" v-show="showPlaylist">
@@ -152,6 +162,10 @@ export default {
       isLooping: false,
       showPlaylist: true,
       isFullscreen: false,
+      showGift: false,
+      giftData: {
+        sender: ''
+      }
     }
   },
   computed: {
@@ -256,36 +270,11 @@ export default {
                          !!document.msFullscreenElement
     },
     showGiftEffect(gift) {
-      const giftElement = document.createElement('div')
-      giftElement.className = 'gift-animation'
-      
-      giftElement.innerHTML = `
-        <div class="gift-info">
-          <div class="gift-avatar">👤</div>
-          <div class="gift-content">
-            <span class="sender">${gift.sender}</span>
-            <div class="gift-text">
-              送出了 <span class="gift-icon">🚀</span>
-            </div>
-          </div>
-        </div>
-      `
-      
-      giftElement.style.transform = 'translate(-50%, 100%)'
-      this.$refs.giftEffectArea?.appendChild(giftElement)
-      
-      giftElement.offsetHeight
-      
-      giftElement.style.transform = 'translate(-50%, -100%)'
-      giftElement.style.opacity = '1'
+      this.giftData = gift
+      this.showGift = true
       
       setTimeout(() => {
-        giftElement.style.opacity = '0'
-        giftElement.style.transform = 'translate(-50%, -200%)'
-        
-        setTimeout(() => {
-          giftElement.remove()
-        }, 500)
+        this.showGift = false
       }, 3000)
     },
     testEffects() {
@@ -642,33 +631,28 @@ h2 {
   background: #1a1a1a;
 }
 
-/* 修改礼物特效相关样式 */
-.gift-effect-area {
+.gift-container {
   position: absolute;
   left: 0;
   right: 0;
   top: 0;
   bottom: 0;
   pointer-events: none;
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.gift-animation {
-  position: absolute;
-  left: 50%;
-  bottom: 50px;
+.gift-box {
   background: rgba(0, 0, 0, 0.7);
   border-radius: 50px;
   padding: 10px 20px;
-  opacity: 0;
-  transition: all 0.5s ease;
 }
 
 .gift-info {
   display: flex;
   align-items: center;
   gap: 10px;
-  white-space: nowrap;
 }
 
 .gift-avatar {
@@ -690,69 +674,44 @@ h2 {
 }
 
 .gift-text {
+  color: #fff;
   display: flex;
   align-items: center;
   gap: 5px;
-  color: #fff;
 }
 
 .gift-icon {
   font-size: 24px;
 }
 
-.fade-out {
-  animation: fadeOut 0.5s ease-out forwards;
+/* 礼物动画 */
+.gift-enter-active {
+  animation: giftIn 0.5s;
 }
 
-@keyframes giftSlideUp {
-  0% {
-    bottom: -100px;
-    opacity: 0;
-    transform: translateX(-50%) scale(0.8);
-  }
-  100% {
-    bottom: 100px;
-    opacity: 1;
-    transform: translateX(-50%) scale(1);
-  }
+.gift-leave-active {
+  animation: giftOut 0.5s;
 }
 
-@keyframes giftFloat {
-  0% {
-    transform: translateX(-50%) translateY(0);
-  }
-  50% {
-    transform: translateX(-50%) translateY(-20px);
-  }
-  100% {
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
-@keyframes giftSpin {
+@keyframes giftIn {
   from {
-    transform: rotate(0deg);
+    transform: translateY(100%);
+    opacity: 0;
   }
   to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes fadeOut {
-  0% {
+    transform: translateY(0);
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-50px);
   }
 }
 
-/* 添加组合动画的类 */
-.gift-animation.active {
-  animation: 
-    giftSlideUp 0.5s ease-out forwards,
-    giftFloat 2s ease-in-out infinite;
+@keyframes giftOut {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
 }
 </style> 
