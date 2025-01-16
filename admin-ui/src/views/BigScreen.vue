@@ -271,16 +271,17 @@ export default {
         </div>
       `
       
+      giftElement.style.transform = 'translate(-50%, 100%)'
       this.$refs.giftEffectArea?.appendChild(giftElement)
       
-      setTimeout(() => {
-        giftElement.style.bottom = '100px'
-        giftElement.style.opacity = '1'
-      }, 50)
+      giftElement.offsetHeight
+      
+      giftElement.style.transform = 'translate(-50%, -100%)'
+      giftElement.style.opacity = '1'
       
       setTimeout(() => {
         giftElement.style.opacity = '0'
-        giftElement.style.transform = 'translateX(-50%) translateY(-50px)'
+        giftElement.style.transform = 'translate(-50%, -200%)'
         
         setTimeout(() => {
           giftElement.remove()
@@ -644,8 +645,10 @@ h2 {
 /* 修改礼物特效相关样式 */
 .gift-effect-area {
   position: absolute;
-  width: 100%;
-  height: 100%;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
   pointer-events: none;
   overflow: hidden;
 }
@@ -653,13 +656,10 @@ h2 {
 .gift-animation {
   position: absolute;
   left: 50%;
-  bottom: -100px;
-  transform: translateX(-50%);
+  bottom: 50px;
   background: rgba(0, 0, 0, 0.7);
   border-radius: 50px;
   padding: 10px 20px;
-  display: flex;
-  align-items: center;
   opacity: 0;
   transition: all 0.5s ease;
 }
@@ -668,6 +668,7 @@ h2 {
   display: flex;
   align-items: center;
   gap: 10px;
+  white-space: nowrap;
 }
 
 .gift-avatar {
