@@ -103,18 +103,31 @@ async function handleCallback(code, res) {
 }
 
 // JWT 验证中间件
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) {
-            return res.status(401).json({ success: false, message: '未提供认证令牌' });
+            return res.status(401).json({ message: '未授权' });
         }
 
-        const decoded = jwt.verify(token, JWT_SECRET);
-        req.user = decoded;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        // 获取完整的用户信息
+        const [[user]] = await pool.query(`
+            SELECT id, username, nickname, realname, headimgurl, role, rockets
+            FROM users 
+            WHERE id = ?
+        `, [decoded.id]);
+
+        if (!user) {
+            return res.status(401).json({ message: '用户不存在' });
+        }
+
+        req.user = user;
         next();
     } catch (error) {
-        res.status(401).json({ success: false, message: '无效的认证令牌' });
+        console.error('Auth middleware error:', error);
+        res.status(401).json({ message: '授权验证失败' });
     }
 };
 

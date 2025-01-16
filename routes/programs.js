@@ -3,6 +3,7 @@ const router = express.Router();
 const Program = require('../models/Program');
 const { authMiddleware, adminMiddleware } = require('./wechat-auth');
 const { broadcastGift } = require('./big-screen');
+const pool = require('../db/pool');
 
 // 获取节目列表
 router.get('/', async (req, res) => {
@@ -110,6 +111,8 @@ router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
 router.post('/:id/gift', authMiddleware, async (req, res) => {
     try {
         const { rockets } = req.body;
+        console.log('Current user:', req.user);
+
         const program = await Program.findById(req.params.id);
         if (!program) {
             return res.status(404).json({ message: '节目不存在' });
@@ -118,14 +121,15 @@ router.post('/:id/gift', authMiddleware, async (req, res) => {
         // 更新火箭数量
         await Program.giftRocket(req.params.id, req.user.id, rockets);
 
-        // 广播礼物消息到大屏，添加更多用户信息
+        // 广播礼物消息到大屏
         broadcastGift({
-            sender: req.user.nickname || req.user.username,
-            senderAvatar: req.user.headimgurl || '', // 添加用户头像
-            realName: req.user.realname || req.user.nickname || req.user.username, // 添加真实姓名
+            type: 'gift',
+            sender: req.user.nickname,
+            senderAvatar: req.user.headimgurl,
+            realName: req.user.realname || req.user.nickname,
             programName: program.name,
             giftType: 'rocket',
-            giftCount: rockets, // 添加火箭数量
+            giftCount: rockets,
             timestamp: Date.now()
         });
 

@@ -171,6 +171,7 @@ export default {
         sender: ''
       },
       ws: null,
+      processedMessageIds: new Set(),
     }
   },
   computed: {
@@ -275,10 +276,11 @@ export default {
                          !!document.msFullscreenElement
     },
     showGiftEffect(gift) {
+      console.log('Showing gift effect:', gift);
       this.giftData = {
         senderAvatar: gift.senderAvatar,
         realName: gift.realName,
-        giftCount: gift.giftCount || 1
+        giftCount: gift.giftCount
       };
       this.showGift = true;
       
@@ -293,14 +295,16 @@ export default {
       })
     },
     initWebSocket() {
-      const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
-      const wsUrl = `${wsProtocol}//${location.host}/ws/gift`
+      const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${wsProtocol}//${location.host}/ws/gift`;
       
-      this.ws = new WebSocket(wsUrl)
+      this.ws = new WebSocket(wsUrl);
       
       this.ws.onopen = () => {
-        console.log('WebSocket connected')
-      }
+        console.log('WebSocket connected');
+      };
+      
+      this.ws.onmessage = this.handleWebSocketMessage;
       
       this.ws.onclose = () => {
         console.log('WebSocket disconnected, trying to reconnect...')
@@ -312,24 +316,31 @@ export default {
       this.ws.onerror = (error) => {
         console.error('WebSocket error:', error)
       }
-      
-      this.ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data)
-          console.log('Received message:', data)
-          if (data.type === 'gift' && data.giftType === 'rocket') {
+    },
+    handleWebSocketMessage(event) {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('Received WebSocket message:', data);
+
+        if (data.type === 'gift' && data.giftType === 'rocket') {
+          if (!this.processedMessageIds.has(data.messageId)) {
+            this.processedMessageIds.add(data.messageId);
+            
             this.showGiftEffect({
               senderAvatar: data.senderAvatar,
               realName: data.realName,
               giftCount: data.giftCount
-            })
+            });
             
-            this.updateRankList(data)
-            this.updateGiftRecords(data)
+            setTimeout(() => {
+              this.processedMessageIds.delete(data.messageId);
+            }, 5000);
+          } else {
+            console.log('Duplicate message received, ignored:', data.messageId);
           }
-        } catch (error) {
-          console.error('WebSocket message error:', error)
         }
+      } catch (error) {
+        console.error('WebSocket message error:', error);
       }
     },
     updateRankList(giftData) {
@@ -362,6 +373,21 @@ export default {
       
       if (this.giftRecords.length > 20) {
         this.giftRecords.pop()
+      }
+    },
+    onWebSocketMessage(event) {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'gift' && !this.processedGiftIds.has(data.id)) {
+          this.processedGiftIds.add(data.id);
+          this.showGiftEffect({
+            senderAvatar: data.senderAvatar,
+            realName: data.realName,
+            giftCount: data.giftCount
+          });
+        }
+      } catch (error) {
+        console.error('WebSocket message error:', error);
       }
     }
   },
@@ -723,7 +749,7 @@ h2 {
   left: 0;
   right: 0;
   top: 0;
-  bottom: 0;
+  bottom: v-bind('showPlaylist ? "30%" : "0"');
   pointer-events: none;
   overflow: hidden;
 }
@@ -801,22 +827,22 @@ h2 {
 
 @keyframes giftAnimation {
   0% {
-    bottom: -100px;
+    bottom: -50px;
     opacity: 0;
     transform: translateX(-50%) scale(0.8);
   }
   15% {
-    bottom: 100px;
+    bottom: 20%;
     opacity: 1;
     transform: translateX(-50%) scale(1);
   }
   75% {
-    bottom: 100px;
+    bottom: 20%;
     opacity: 1;
     transform: translateX(-50%) scale(1);
   }
   100% {
-    bottom: 120vh;
+    bottom: 100%;
     opacity: 0;
     transform: translateX(-50%) scale(0.8) rotate(10deg);
   }

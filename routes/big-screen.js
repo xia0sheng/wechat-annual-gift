@@ -4,59 +4,53 @@ const WebSocket = require('ws');
 const url = require('url');
 
 // 存储所有连接的客户端
-const clients = new Set();
+let clients = new Set();
 
 // 创建 WebSocket 服务器
 const initWebSocket = (server) => {
-  const wss = new WebSocket.Server({ noServer: true });
+  const wss = new WebSocket.Server({ server, path: '/ws/gift' });
 
-  // 处理升级请求
-  server.on('upgrade', (request, socket, head) => {
-    const pathname = url.parse(request.url).pathname;
-
-    if (pathname === '/ws/gift') {
-      wss.handleUpgrade(request, socket, head, (ws) => {
-        wss.emit('connection', ws, request);
-      });
-    }
-  });
-
-  // 处理连接
   wss.on('connection', (ws) => {
-    // 添加新客户端
     clients.add(ws);
-
-    // 处理连接关闭
+    console.log('WebSocket client connected, total clients:', clients.size);
+    
     ws.on('close', () => {
       clients.delete(ws);
-    });
-
-    // 处理错误
-    ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
-      clients.delete(ws);
+      console.log('WebSocket client disconnected, remaining clients:', clients.size);
     });
   });
 
   return wss;
 };
 
-// 广播礼物消息给所有客户端
+// 修改广播函数，添加消息去重机制
+const messageCache = new Set();
+const MESSAGE_CACHE_TIMEOUT = 5000; // 5秒内的相同消息会被忽略
+
 const broadcastGift = (giftData) => {
+  const messageId = `${giftData.timestamp}-${giftData.sender}-${giftData.giftCount}`;
+  
+  // 检查是否是重复消息
+  if (messageCache.has(messageId)) {
+    console.log('Duplicate message detected, skipping broadcast:', messageId);
+    return;
+  }
+  
+  // 添加到缓存
+  messageCache.add(messageId);
+  setTimeout(() => messageCache.delete(messageId), MESSAGE_CACHE_TIMEOUT);
+  
   const message = JSON.stringify({
     type: 'gift',
+    messageId,
     ...giftData
   });
-
-  console.log('Broadcasting gift:', message);
-  console.log('Connected clients:', clients.size);
-
+  
+  console.log('Broadcasting gift message:', message);
+  
   clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(message);
-      console.log('Message sent to client');
-    } else {
-      console.log('Client not ready:', client.readyState);
     }
   });
 };
@@ -76,19 +70,11 @@ router.post('/send-gift', async (req, res) => {
   try {
     const { sender, programName, giftType } = req.body;
     
-    // 验证请求数据
     if (!sender || !programName || !giftType) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // 广播礼物消息
-    broadcastGift({
-      sender,
-      programName,
-      giftType,
-      timestamp: Date.now()
-    });
-
+    // 这里不需要再次调用 broadcastGift，因为已经在 programs.js 中调用了
     res.json({ success: true });
   } catch (error) {
     console.error('Send gift error:', error);
@@ -103,8 +89,11 @@ router.post('/test-gift', async (req, res) => {
     broadcastGift({
       type: 'gift',
       sender: '测试用户',
+      senderAvatar: '/default-avatar.png',
+      realName: '测试用户',
       programName: '测试节目',
       giftType: 'rocket',
+      giftCount: 1,
       timestamp: Date.now()
     });
 

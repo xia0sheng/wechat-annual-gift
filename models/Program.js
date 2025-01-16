@@ -41,8 +41,42 @@ class Program {
     }
 
     static async findById(id) {
-        const [rows] = await pool.query('SELECT * FROM programs WHERE id = ?', [id]);
-        return rows[0];
+        const [rows] = await pool.query(`
+            SELECT 
+                p.*,
+                COALESCE(SUM(rg.rockets), 0) as total_rockets,
+                COUNT(DISTINCT rg.user_id) as gifters_count,
+                GROUP_CONCAT(
+                    JSON_OBJECT(
+                        'id', rg.id,
+                        'user_id', rg.user_id,
+                        'rockets', rg.rockets,
+                        'created_at', rg.created_at,
+                        'nickname', u.nickname,
+                        'headimgurl', u.headimgurl,
+                        'realname', u.realname
+                    )
+                ) as gifts
+            FROM programs p
+            LEFT JOIN rocket_gifts rg ON p.id = rg.program_id
+            LEFT JOIN users u ON rg.user_id = u.id
+            WHERE p.id = ?
+            GROUP BY p.id
+        `, [id]);
+
+        if (!rows[0]) return null;
+
+        // 处理礼物记录
+        const program = rows[0];
+        try {
+            program.gifts = program.gifts ? 
+                program.gifts.split(',').map(gift => JSON.parse(gift)) : 
+                [];
+        } catch (e) {
+            program.gifts = [];
+        }
+
+        return program;
     }
 
     static async create(data) {
