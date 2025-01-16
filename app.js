@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
-const { router, initWebSocket } = require('./routes');
+const { initDB } = require('./config/database');
+const { router: mainRouter, initWebSocket } = require('./routes');
 
 const app = express();
 const server = http.createServer(app);
@@ -33,7 +34,7 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 路由
+// 原有路由
 const { router: wechatAuthRouter } = require('./routes/wechat-auth');
 const usersRouter = require('./routes/users');
 const programsRouter = require('./routes/programs');
@@ -41,6 +42,9 @@ const programsRouter = require('./routes/programs');
 app.use('/wechat', wechatAuthRouter);
 app.use('/users', usersRouter);
 app.use('/programs', programsRouter);
+
+// 新添加的 big-screen 路由
+app.use('/', mainRouter);
 
 app.get('/', (req, res) => {
     res.send('欢迎访问微信授权服务！请访问 /wechat/auth 开始授权。');
@@ -59,8 +63,6 @@ app.use((err, req, res, next) => {
 app.use((req, res) => {
     res.status(404).send('404 - 未找到页面');
 });
-
-app.use('/', router);
 
 // 启动服务器
 const PORT = process.env.PORT || 3000;
