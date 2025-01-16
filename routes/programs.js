@@ -112,6 +112,18 @@ router.post('/:id/gift', authMiddleware, async (req, res) => {
     try {
         const { rockets } = req.body;
         await Program.giftRocket(req.params.id, req.user.id, rockets);
+
+        // 获取节目和用户信息
+        const program = await Program.findById(req.params.id);
+        
+        // 添加广播礼物消息
+        broadcastGift({
+            sender: req.user.nickname || req.user.username,
+            programName: program.name,
+            giftType: 'rocket',
+            timestamp: Date.now()
+        });
+
         res.json({
             success: true,
             message: '赠送成功'
