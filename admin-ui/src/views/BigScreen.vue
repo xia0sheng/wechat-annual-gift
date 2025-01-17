@@ -173,8 +173,10 @@ export default {
         giftCount: 0
       },
       ws: null,
-      processedMessageIds: new Set(),
       wsReconnectTimer: null,
+      wsReconnectAttempts: 0,
+      wsMaxReconnectAttempts: 5,
+      processedMessageIds: new Set(),
       isAnimating: false,
       animationQueue: [],
       _isMount: false,
@@ -363,6 +365,23 @@ export default {
       
       this.ws.onopen = () => {
         console.log('[BigScreen] WebSocket connected successfully');
+        this.wsReconnectAttempts = 0; // 重置重连次数
+      };
+      
+      this.ws.onclose = () => {
+        console.log('[BigScreen] WebSocket connection closed');
+        if (this._isMount && this.wsReconnectAttempts < this.wsMaxReconnectAttempts) {
+          console.log('[BigScreen] Attempting to reconnect...');
+          this.wsReconnectAttempts++;
+          this.wsReconnectTimer = setTimeout(() => {
+            console.log('[BigScreen] Reconnecting... Attempt:', this.wsReconnectAttempts);
+            this.initWebSocket();
+          }, 3000);
+        }
+      };
+      
+      this.ws.onerror = (error) => {
+        console.error('[BigScreen] WebSocket error:', error);
       };
       
       this.ws.onmessage = this.handleWebSocketMessage.bind(this);
@@ -373,6 +392,11 @@ export default {
         this.ws.onclose = null; // 移除重连逻辑
         this.ws.close();
         this.ws = null;
+      }
+      
+      if (this.wsReconnectTimer) {
+        clearTimeout(this.wsReconnectTimer);
+        this.wsReconnectTimer = null;
       }
     },
     handleWebSocketMessage(event) {
@@ -440,6 +464,15 @@ export default {
       if (this.giftRecords.length > 20) {
         this.giftRecords.pop()
       }
+    },
+    handleVisibilityChange() {
+      if (document.hidden) {
+        console.log('[BigScreen] Page hidden, closing WebSocket');
+        this.closeWebSocket();
+      } else {
+        console.log('[BigScreen] Page visible, reconnecting WebSocket');
+        this.initWebSocket();
+      }
     }
   },
   mounted() {
@@ -455,16 +488,16 @@ export default {
     // 添加新的事件监听器
     this.addEventListeners();
     
+    // 初始化 WebSocket
     this.initWebSocket();
-    window.addEventListener('beforeunload', () => {
-      if (this.ws) {
-        this.ws.close();
-      }
-    });
+    
+    // 添加页面可见性监听
+    document.addEventListener('visibilitychange', this.handleVisibilityChange);
   },
   beforeUnmount() {
     this._isMount = false;
     this.removeEventListeners();
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
     this.closeWebSocket();
     
     // 清理所有定时器和队列
