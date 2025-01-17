@@ -178,7 +178,8 @@ export default {
       isAnimating: false,
       animationQueue: [],
       _isMount: false,
-      _hideGiftTimer: null
+      _hideGiftTimer: null,
+      _animationInProgress: false
     }
   },
   computed: {
@@ -297,26 +298,33 @@ export default {
     _showGiftEffect(gift) {
       console.log('[BigScreen] _showGiftEffect called with:', gift);
       
-      // 取消之前的动画定时器
+      // 如果动画正在进行中，直接返回
+      if (this._animationInProgress) {
+        console.log('[BigScreen] Animation in progress, skipping...');
+        return;
+      }
+      
+      // 标记动画开始
+      this._animationInProgress = true;
+      console.log('[BigScreen] Starting animation');
+      
+      // 取消之前的定时器
       if (this._hideGiftTimer) {
         clearTimeout(this._hideGiftTimer);
         this._hideGiftTimer = null;
       }
       
-      // 重置动画状态
-      this.showGift = false;
+      // 设置礼物数据
+      this.giftData = gift;
+      this.showGift = true;
       
-      // 使用 nextTick 确保状态更新
-      this.$nextTick(() => {
-        this.giftData = gift;
-        this.showGift = true;
-        
-        // 保存定时器引用
-        this._hideGiftTimer = setTimeout(() => {
-          this.showGift = false;
-          this._hideGiftTimer = null;
-        }, 3000);
-      });
+      // 设置动画结束定时器
+      this._hideGiftTimer = setTimeout(() => {
+        console.log('[BigScreen] Animation ending');
+        this.showGift = false;
+        this._animationInProgress = false;  // 标记动画结束
+        this._hideGiftTimer = null;
+      }, 3000);
     },
     testEffects() {
       this._showGiftEffect({
@@ -364,10 +372,13 @@ export default {
             console.log('[BigScreen] New message, showing animation');
             this.processedMessageIds.add(messageId);
             
-            this._showGiftEffect({
-              senderAvatar: data.senderAvatar,
-              realName: data.realName,
-              giftCount: data.giftCount
+            // 使用 requestAnimationFrame 确保动画流畅
+            requestAnimationFrame(() => {
+              this._showGiftEffect({
+                senderAvatar: data.senderAvatar,
+                realName: data.realName,
+                giftCount: data.giftCount
+              });
             });
             
             setTimeout(() => {
@@ -858,7 +869,7 @@ h2 {
 }
 
 .gift-leave-active {
-  animation: giftAnimation 3s ease-out forwards;
+  animation: none; /* 移除离开动画 */
 }
 
 @keyframes giftAnimation {
@@ -878,9 +889,9 @@ h2 {
     transform: translateX(-50%) scale(1);
   }
   100% {
-    bottom: 100%;
+    bottom: 20%;
     opacity: 0;
-    transform: translateX(-50%) scale(0.8) rotate(10deg);
+    transform: translateX(-50%) scale(0.8);
   }
 }
 </style> 
