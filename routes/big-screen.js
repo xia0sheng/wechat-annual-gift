@@ -10,13 +10,25 @@ let clients = new Set();
 const initWebSocket = (server) => {
   const wss = new WebSocket.Server({ server, path: '/ws/gift' });
 
-  wss.on('connection', (ws) => {
+  wss.on('connection', (ws, req) => {
+    // 添加连接 ID 用于调试
+    ws.id = Math.random().toString(36).substring(7);
+    console.log(`[WebSocket] Client ${ws.id} connected, total clients: ${clients.size}`);
+    
+    // 检查是否已经存在相同的连接
+    clients.forEach(client => {
+      if (client.id === ws.id) {
+        console.log(`[WebSocket] Duplicate connection detected, closing old connection: ${client.id}`);
+        client.close();
+        clients.delete(client);
+      }
+    });
+    
     clients.add(ws);
-    console.log('WebSocket client connected, total clients:', clients.size);
     
     ws.on('close', () => {
       clients.delete(ws);
-      console.log('WebSocket client disconnected, remaining clients:', clients.size);
+      console.log(`[WebSocket] Client ${ws.id} disconnected, remaining clients: ${clients.size}`);
     });
   });
 
@@ -28,30 +40,28 @@ const messageCache = new Set();
 const MESSAGE_CACHE_TIMEOUT = 5000; // 5秒内的相同消息会被忽略
 
 const broadcastGift = (giftData) => {
-  const messageId = `${giftData.timestamp}-${giftData.sender}-${giftData.giftCount}`;
+  console.log('[WebSocket] Broadcasting gift, data:', giftData); // 添加日志
   
-  // 检查是否是重复消息
+  const messageId = `${giftData.timestamp}-${giftData.sender}-${giftData.giftCount}`;
+  console.log('[WebSocket] Generated messageId:', messageId); // 添加日志
+  
   if (messageCache.has(messageId)) {
-    console.log('Duplicate message detected, skipping broadcast:', messageId);
+    console.log('[WebSocket] Duplicate message detected, messageId:', messageId);
     return;
   }
   
-  // 添加到缓存
   messageCache.add(messageId);
-  setTimeout(() => messageCache.delete(messageId), MESSAGE_CACHE_TIMEOUT);
+  console.log('[WebSocket] Active clients:', clients.size); // 添加日志
   
-  // 确保 messageId 被包含在广播消息中
   const message = JSON.stringify({
     type: 'gift',
-    messageId,  // 确保包含 messageId
+    messageId,
     ...giftData
   });
   
-  console.log('Broadcasting gift message:', message);
-  
-  // 只向状态为 OPEN 的客户端广播
   clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
+      console.log('[WebSocket] Sending to client...'); // 添加日志
       client.send(message);
     }
   });

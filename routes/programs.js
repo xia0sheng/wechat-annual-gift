@@ -111,6 +111,7 @@ router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
 router.post('/:id/gift', authMiddleware, async (req, res) => {
     try {
         const { rockets } = req.body;
+        console.log('[Gift Route] Starting gift process...');
         
         // 获取完整的用户信息
         const [[user]] = await pool.query(`
@@ -118,21 +119,22 @@ router.post('/:id/gift', authMiddleware, async (req, res) => {
             FROM users 
             WHERE id = ?
         `, [req.user.id]);
+        console.log('[Gift Route] User info:', user);
 
         const program = await Program.findById(req.params.id);
-        if (!program) {
-            return res.status(404).json({ message: '节目不存在' });
-        }
+        console.log('[Gift Route] Program info:', program);
 
         // 更新火箭数量
         await Program.giftRocket(req.params.id, req.user.id, rockets);
+        console.log('[Gift Route] Rocket gift recorded');
 
-        // 使用完整的用户信息
+        // 广播礼物消息
+        console.log('[Gift Route] Broadcasting gift message...');
         broadcastGift({
             type: 'gift',
             sender: user.nickname,
             senderAvatar: user.headimgurl,
-            realName: user.real_name || user.nickname, // 优先使用真实姓名
+            realName: user.real_name || user.nickname,
             programName: program.name,
             giftType: 'rocket',
             giftCount: rockets,
@@ -144,7 +146,7 @@ router.post('/:id/gift', authMiddleware, async (req, res) => {
             message: '赠送成功'
         });
     } catch (error) {
-        console.error('赠送火箭失败:', error);
+        console.error('[Gift Route] Error:', error);
         res.status(500).json({
             success: false,
             message: error.message || '赠送火箭失败'

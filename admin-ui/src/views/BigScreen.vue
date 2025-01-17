@@ -281,9 +281,10 @@ export default {
                          !!document.msFullscreenElement
     },
     showGiftEffect(gift) {
-      console.log('Showing gift effect:', gift);
+      console.log('[BigScreen] Starting gift animation:', gift);
       
       if (this.showGift) {
+        console.log('[BigScreen] Animation already playing, resetting...');
         this.showGift = false;
         this.$nextTick(() => {
           this.startGiftAnimation(gift);
@@ -348,36 +349,27 @@ export default {
     handleWebSocketMessage(event) {
       try {
         const data = JSON.parse(event.data);
-        console.log('Received WebSocket message:', data);
+        console.log('[BigScreen] Received message:', data);
 
         if (data.type === 'gift' && data.giftType === 'rocket') {
           const messageId = `${data.timestamp}-${data.sender}-${data.giftCount}`;
+          console.log('[BigScreen] Processing messageId:', messageId);
+          
           if (!this.processedMessageIds.has(messageId)) {
-            console.log('Processing new gift message:', messageId);
+            console.log('[BigScreen] New message, showing animation');
             this.processedMessageIds.add(messageId);
             
-            this.updateGiftRecords({
-              sender: data.realName,
-              programName: data.programName,
-              giftType: '🚀火箭',
-              giftCount: data.giftCount
-            });
-
             this.showGiftEffect({
               senderAvatar: data.senderAvatar,
               realName: data.realName,
               giftCount: data.giftCount
             });
-
-            setTimeout(() => {
-              this.processedMessageIds.delete(messageId);
-            }, 5000);
           } else {
-            console.log('Duplicate message ignored:', messageId);
+            console.log('[BigScreen] Duplicate message ignored:', messageId);
           }
         }
       } catch (error) {
-        console.error('WebSocket message error:', error);
+        console.error('[BigScreen] Error:', error);
       }
     },
     updateRankList(giftData) {
