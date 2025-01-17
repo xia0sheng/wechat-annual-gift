@@ -172,7 +172,9 @@ export default {
       },
       ws: null,
       processedMessageIds: new Set(),
-      wsReconnectTimer: null
+      wsReconnectTimer: null,
+      isAnimating: false,
+      animationQueue: []
     }
   },
   computed: {
@@ -338,12 +340,16 @@ export default {
           if (!this.processedMessageIds.has(data.messageId)) {
             this.processedMessageIds.add(data.messageId);
             
-            this.showGiftEffect({
+            this.animationQueue.push({
               senderAvatar: data.senderAvatar,
               realName: data.realName,
               giftCount: data.giftCount
             });
-            
+
+            if (!this.isAnimating) {
+              this.playNextAnimation();
+            }
+
             setTimeout(() => {
               this.processedMessageIds.delete(data.messageId);
             }, 5000);
@@ -354,6 +360,16 @@ export default {
       } catch (error) {
         console.error('WebSocket message error:', error);
       }
+    },
+    playNextAnimation() {
+      if (this.animationQueue.length === 0) {
+        this.isAnimating = false;
+        return;
+      }
+
+      this.isAnimating = true;
+      const giftData = this.animationQueue.shift();
+      this.showGiftEffect(giftData);
     },
     updateRankList(giftData) {
       const index = this.rankList.findIndex(item => 
