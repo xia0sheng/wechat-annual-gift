@@ -176,7 +176,8 @@ export default {
       processedMessageIds: new Set(),
       wsReconnectTimer: null,
       isAnimating: false,
-      animationQueue: []
+      animationQueue: [],
+      _isMount: false
     }
   },
   computed: {
@@ -280,33 +281,26 @@ export default {
                          !!document.mozFullScreenElement || 
                          !!document.msFullscreenElement
     },
-    showGiftEffect(gift) {
-      console.log('[BigScreen] Starting gift animation:', gift);
-      
+    _showGiftEffect(gift) {
       if (this.showGift) {
-        console.log('[BigScreen] Animation already playing, resetting...');
         this.showGift = false;
-        this.$nextTick(() => {
-          this.startGiftAnimation(gift);
+        requestAnimationFrame(() => {
+          this.giftData = gift;
+          this.showGift = true;
+          setTimeout(() => {
+            this.showGift = false;
+          }, 3000);
         });
       } else {
-        this.startGiftAnimation(gift);
+        this.giftData = gift;
+        this.showGift = true;
+        setTimeout(() => {
+          this.showGift = false;
+        }, 3000);
       }
     },
-    startGiftAnimation(gift) {
-      this.giftData = {
-        senderAvatar: gift.senderAvatar,
-        realName: gift.realName,
-        giftCount: gift.giftCount
-      };
-      this.showGift = true;
-      
-      setTimeout(() => {
-        this.showGift = false;
-      }, 3000);
-    },
     testEffects() {
-      this.showGiftEffect({
+      this._showGiftEffect({
         senderAvatar: '/default-avatar.png',
         realName: '测试用户',
         giftCount: 1
@@ -314,6 +308,7 @@ export default {
     },
     initWebSocket() {
       if (this.ws) {
+        console.log('[BigScreen] Closing existing WebSocket connection');
         this.ws.close();
         this.ws = null;
       }
@@ -321,56 +316,57 @@ export default {
       const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${wsProtocol}//${location.host}/ws/gift`;
       
+      console.log('[BigScreen] Initializing WebSocket connection:', wsUrl);
       this.ws = new WebSocket(wsUrl);
       
       this.ws.onopen = () => {
-        console.log('WebSocket connected');
+        console.log('[BigScreen] WebSocket connected');
         if (this.wsReconnectTimer) {
           clearTimeout(this.wsReconnectTimer);
           this.wsReconnectTimer = null;
         }
       };
       
-      this.ws.onmessage = this.handleWebSocketMessage;
+      this.ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('[BigScreen] Received message:', data);
+
+          if (data.type === 'gift' && data.giftType === 'rocket') {
+            const messageId = `${data.timestamp}-${data.sender}-${data.giftCount}`;
+            console.log('[BigScreen] Processing messageId:', messageId);
+            
+            if (!this.processedMessageIds.has(messageId)) {
+              console.log('[BigScreen] New message, showing animation');
+              this.processedMessageIds.add(messageId);
+              
+              this._showGiftEffect({
+                senderAvatar: data.senderAvatar,
+                realName: data.realName,
+                giftCount: data.giftCount
+              });
+
+              setTimeout(() => {
+                this.processedMessageIds.delete(messageId);
+              }, 5000);
+            } else {
+              console.log('[BigScreen] Duplicate message ignored:', messageId);
+            }
+          }
+        } catch (error) {
+          console.error('[BigScreen] Error:', error);
+        }
+      };
       
       this.ws.onclose = () => {
-        console.log('WebSocket disconnected, trying to reconnect...');
-        if (!this.wsReconnectTimer) {
+        console.log('[BigScreen] WebSocket disconnected');
+        if (this._isMount && !this.wsReconnectTimer) {
+          console.log('[BigScreen] Scheduling reconnection...');
           this.wsReconnectTimer = setTimeout(() => {
             this.initWebSocket();
           }, 3000);
         }
       };
-      
-      this.ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-      };
-    },
-    handleWebSocketMessage(event) {
-      try {
-        const data = JSON.parse(event.data);
-        console.log('[BigScreen] Received message:', data);
-
-        if (data.type === 'gift' && data.giftType === 'rocket') {
-          const messageId = `${data.timestamp}-${data.sender}-${data.giftCount}`;
-          console.log('[BigScreen] Processing messageId:', messageId);
-          
-          if (!this.processedMessageIds.has(messageId)) {
-            console.log('[BigScreen] New message, showing animation');
-            this.processedMessageIds.add(messageId);
-            
-            this.showGiftEffect({
-              senderAvatar: data.senderAvatar,
-              realName: data.realName,
-              giftCount: data.giftCount
-            });
-          } else {
-            console.log('[BigScreen] Duplicate message ignored:', messageId);
-          }
-        }
-      } catch (error) {
-        console.error('[BigScreen] Error:', error);
-      }
     },
     updateRankList(giftData) {
       const index = this.rankList.findIndex(item => 
@@ -406,6 +402,7 @@ export default {
     }
   },
   mounted() {
+    this._isMount = true;
     document.addEventListener('fullscreenchange', this.handleFullscreenChange)
     document.addEventListener('webkitfullscreenchange', this.handleFullscreenChange)
     document.addEventListener('mozfullscreenchange', this.handleFullscreenChange)
@@ -419,6 +416,7 @@ export default {
     });
   },
   beforeUnmount() {
+    this._isMount = false;
     document.removeEventListener('fullscreenchange', this.handleFullscreenChange)
     document.removeEventListener('webkitfullscreenchange', this.handleFullscreenChange)
     document.removeEventListener('mozfullscreenchange', this.handleFullscreenChange)
