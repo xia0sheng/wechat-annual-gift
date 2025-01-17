@@ -182,7 +182,8 @@ export default {
       _isMount: false,
       _hideGiftTimer: null,
       _animationInProgress: false,
-      _animationQueue: []
+      _animationQueue: [],
+      _animationTimer: null
     }
   },
   computed: {
@@ -301,47 +302,47 @@ export default {
     _showGiftEffect(gift) {
       console.log('[BigScreen] _showGiftEffect called with:', gift);
       
-      // 如果动画正在进行中，加入队列
-      if (this._animationInProgress) {
-        console.log('[BigScreen] Animation in progress, queueing gift:', gift);
-        this._animationQueue.push(gift);
+      // 将礼物添加到队列
+      this._animationQueue.push(gift);
+      console.log('[BigScreen] Animation queue length:', this._animationQueue.length);
+      
+      // 如果没有动画在播放，开始播放
+      if (!this._animationInProgress) {
+        this._playNextAnimation();
+      }
+    },
+    
+    _playNextAnimation() {
+      if (this._animationQueue.length === 0 || this._animationInProgress) {
+        console.log('[BigScreen] No animations to play or animation in progress');
         return;
       }
       
-      // 开始播放动画
-      this._playGiftAnimation(gift);
-    },
-    
-    _playGiftAnimation(gift) {
-      // 标记动画开始
+      const gift = this._animationQueue.shift();
+      console.log('[BigScreen] Playing animation for gift:', gift);
+      
       this._animationInProgress = true;
-      console.log('[BigScreen] Starting animation');
-      
-      // 取消之前的定时器
-      if (this._hideGiftTimer) {
-        clearTimeout(this._hideGiftTimer);
-        this._hideGiftTimer = null;
-      }
-      
-      // 设置礼物数据
       this.giftData = gift;
       this.showGift = true;
       
-      // 设置动画结束定时器
-      this._hideGiftTimer = setTimeout(() => {
-        console.log('[BigScreen] Animation ending');
+      // 清除之前的定时器
+      if (this._animationTimer) {
+        clearTimeout(this._animationTimer);
+      }
+      
+      // 设置新的定时器
+      this._animationTimer = setTimeout(() => {
+        console.log('[BigScreen] Animation completed');
         this.showGift = false;
         this._animationInProgress = false;
-        this._hideGiftTimer = null;
         
-        // 检查队列中是否有下一个动画
-        this.$nextTick(() => {
+        // 延迟一小段时间后播放下一个动画
+        setTimeout(() => {
           if (this._animationQueue.length > 0) {
             console.log('[BigScreen] Playing next animation from queue');
-            const nextGift = this._animationQueue.shift();
-            this._playGiftAnimation(nextGift);
+            this._playNextAnimation();
           }
-        });
+        }, 500); // 500ms 的间隔
       }, 3000);
     },
     testEffects() {
@@ -412,13 +413,10 @@ export default {
             console.log('[BigScreen] New message, showing animation');
             this.processedMessageIds.add(messageId);
             
-            // 使用 requestAnimationFrame 确保动画流畅
-            requestAnimationFrame(() => {
-              this._showGiftEffect({
-                senderAvatar: data.senderAvatar,
-                realName: data.realName,
-                giftCount: data.giftCount
-              });
+            this._showGiftEffect({
+              senderAvatar: data.senderAvatar,
+              realName: data.realName,
+              giftCount: data.giftCount
             });
             
             setTimeout(() => {
@@ -501,11 +499,12 @@ export default {
     this.closeWebSocket();
     
     // 清理所有定时器和队列
-    if (this._hideGiftTimer) {
-      clearTimeout(this._hideGiftTimer);
-      this._hideGiftTimer = null;
+    if (this._animationTimer) {
+      clearTimeout(this._animationTimer);
+      this._animationTimer = null;
     }
     this._animationQueue = [];
+    this._animationInProgress = false;
   }
 }
 </script>
