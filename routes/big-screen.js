@@ -40,14 +40,16 @@ const broadcastGift = (giftData) => {
   messageCache.add(messageId);
   setTimeout(() => messageCache.delete(messageId), MESSAGE_CACHE_TIMEOUT);
   
+  // 确保 messageId 被包含在广播消息中
   const message = JSON.stringify({
     type: 'gift',
-    messageId,
+    messageId,  // 确保包含 messageId
     ...giftData
   });
   
   console.log('Broadcasting gift message:', message);
   
+  // 只向状态为 OPEN 的客户端广播
   clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(message);

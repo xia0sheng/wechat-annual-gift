@@ -168,7 +168,9 @@ export default {
       isFullscreen: false,
       showGift: false,
       giftData: {
-        sender: ''
+        senderAvatar: '',
+        realName: '',
+        giftCount: 0
       },
       ws: null,
       processedMessageIds: new Set(),
@@ -280,6 +282,17 @@ export default {
     },
     showGiftEffect(gift) {
       console.log('Showing gift effect:', gift);
+      
+      if (this.showGift) {
+        this.showGift = false;
+        this.$nextTick(() => {
+          this.startGiftAnimation(gift);
+        });
+      } else {
+        this.startGiftAnimation(gift);
+      }
+    },
+    startGiftAnimation(gift) {
       this.giftData = {
         senderAvatar: gift.senderAvatar,
         realName: gift.realName,
@@ -337,39 +350,34 @@ export default {
         console.log('Received WebSocket message:', data);
 
         if (data.type === 'gift' && data.giftType === 'rocket') {
-          if (!this.processedMessageIds.has(data.messageId)) {
-            this.processedMessageIds.add(data.messageId);
+          const messageId = `${data.timestamp}-${data.sender}-${data.giftCount}`;
+          if (!this.processedMessageIds.has(messageId)) {
+            console.log('Processing new gift message:', messageId);
+            this.processedMessageIds.add(messageId);
             
-            this.animationQueue.push({
+            this.updateGiftRecords({
+              sender: data.realName,
+              programName: data.programName,
+              giftType: '🚀火箭',
+              giftCount: data.giftCount
+            });
+
+            this.showGiftEffect({
               senderAvatar: data.senderAvatar,
               realName: data.realName,
               giftCount: data.giftCount
             });
 
-            if (!this.isAnimating) {
-              this.playNextAnimation();
-            }
-
             setTimeout(() => {
-              this.processedMessageIds.delete(data.messageId);
+              this.processedMessageIds.delete(messageId);
             }, 5000);
           } else {
-            console.log('Duplicate message received, ignored:', data.messageId);
+            console.log('Duplicate message ignored:', messageId);
           }
         }
       } catch (error) {
         console.error('WebSocket message error:', error);
       }
-    },
-    playNextAnimation() {
-      if (this.animationQueue.length === 0) {
-        this.isAnimating = false;
-        return;
-      }
-
-      this.isAnimating = true;
-      const giftData = this.animationQueue.shift();
-      this.showGiftEffect(giftData);
     },
     updateRankList(giftData) {
       const index = this.rankList.findIndex(item => 
@@ -426,6 +434,11 @@ export default {
     document.addEventListener('MSFullscreenChange', this.handleFullscreenChange)
     
     this.initWebSocket()
+    window.addEventListener('beforeunload', () => {
+      if (this.ws) {
+        this.ws.close();
+      }
+    });
   },
   beforeUnmount() {
     document.removeEventListener('fullscreenchange', this.handleFullscreenChange)
