@@ -183,7 +183,8 @@ export default {
       _hideGiftTimer: null,
       _animationInProgress: false,
       _animationQueue: [],
-      _animationTimer: null
+      _animationTimer: null,
+      _transitionTimer: null
     }
   },
   computed: {
@@ -322,28 +323,36 @@ export default {
       console.log('[BigScreen] Playing animation for gift:', gift);
       
       this._animationInProgress = true;
+      
+      // 先重置状态
+      this.showGift = false;
       this.giftData = gift;
-      this.showGift = true;
       
-      // 清除之前的定时器
-      if (this._animationTimer) {
-        clearTimeout(this._animationTimer);
-      }
-      
-      // 设置新的定时器
-      this._animationTimer = setTimeout(() => {
-        console.log('[BigScreen] Animation completed');
-        this.showGift = false;
-        this._animationInProgress = false;
-        
-        // 延迟一小段时间后播放下一个动画
-        setTimeout(() => {
-          if (this._animationQueue.length > 0) {
-            console.log('[BigScreen] Playing next animation from queue');
-            this._playNextAnimation();
-          }
-        }, 500); // 500ms 的间隔
-      }, 3000);
+      // 使用 nextTick 确保 DOM 更新
+      this.$nextTick(() => {
+        // 短暂延迟后显示动画
+        this._transitionTimer = setTimeout(() => {
+          this.showGift = true;
+          
+          // 设置动画结束定时器
+          this._animationTimer = setTimeout(() => {
+            console.log('[BigScreen] Animation completed');
+            this.showGift = false;
+            
+            // 等待淡出动画完成
+            setTimeout(() => {
+              this._animationInProgress = false;
+              
+              // 检查是否有下一个动画
+              if (this._animationQueue.length > 0) {
+                console.log('[BigScreen] Playing next animation from queue');
+                this._playNextAnimation();
+              }
+            }, 300); // 等待淡出动画完成
+            
+          }, 2500); // 动画显示时间
+        }, 100); // 短暂延迟以确保状态重置
+      });
     },
     testEffects() {
       this._showGiftEffect({
@@ -502,6 +511,10 @@ export default {
     if (this._animationTimer) {
       clearTimeout(this._animationTimer);
       this._animationTimer = null;
+    }
+    if (this._transitionTimer) {
+      clearTimeout(this._transitionTimer);
+      this._transitionTimer = null;
     }
     this._animationQueue = [];
     this._animationInProgress = false;
@@ -852,8 +865,9 @@ h2 {
 }
 
 .gift-box {
-  position: absolute;
+  position: fixed;
   left: 50%;
+  bottom: 20%;
   transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.7);
   border-radius: 50px;
@@ -915,33 +929,32 @@ h2 {
 
 /* 礼物动画 */
 .gift-enter-active {
-  animation: giftAnimation 3s ease-out forwards;
+  animation: giftIn 0.5s ease-out;
 }
 
 .gift-leave-active {
-  animation: none; /* 移除离开动画 */
+  animation: giftOut 0.3s ease-in;
 }
 
-@keyframes giftAnimation {
+@keyframes giftIn {
   0% {
-    bottom: -50px;
+    transform: translateX(-50%) translateY(100px) scale(0.8);
     opacity: 0;
-    transform: translateX(-50%) scale(0.8);
-  }
-  15% {
-    bottom: 20%;
-    opacity: 1;
-    transform: translateX(-50%) scale(1);
-  }
-  75% {
-    bottom: 20%;
-    opacity: 1;
-    transform: translateX(-50%) scale(1);
   }
   100% {
-    bottom: 20%;
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes giftOut {
+  0% {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) translateY(-100px) scale(0.8);
     opacity: 0;
-    transform: translateX(-50%) scale(0.8);
   }
 }
 </style> 
