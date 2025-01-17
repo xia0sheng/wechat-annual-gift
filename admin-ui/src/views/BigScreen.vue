@@ -282,19 +282,31 @@ export default {
                          !!document.msFullscreenElement
     },
     _showGiftEffect(gift) {
+      console.log('[BigScreen] _showGiftEffect called with:', gift);
+      
+      // 如果动画正在播放，先重置
       if (this.showGift) {
+        console.log('[BigScreen] Animation in progress, resetting...');
         this.showGift = false;
-        requestAnimationFrame(() => {
+        
+        // 使用 Promise 确保状态更新
+        Promise.resolve().then(() => {
+          console.log('[BigScreen] Starting new animation');
           this.giftData = gift;
           this.showGift = true;
+          
           setTimeout(() => {
+            console.log('[BigScreen] Animation timeout completed');
             this.showGift = false;
           }, 3000);
         });
       } else {
+        console.log('[BigScreen] Starting animation directly');
         this.giftData = gift;
         this.showGift = true;
+        
         setTimeout(() => {
+          console.log('[BigScreen] Animation timeout completed');
           this.showGift = false;
         }, 3000);
       }
@@ -307,6 +319,8 @@ export default {
       });
     },
     initWebSocket() {
+      console.log('[BigScreen] Initializing WebSocket');
+      
       if (this.ws) {
         console.log('[BigScreen] Closing existing WebSocket connection');
         this.ws.close();
@@ -316,25 +330,21 @@ export default {
       const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${wsProtocol}//${location.host}/ws/gift`;
       
-      console.log('[BigScreen] Initializing WebSocket connection:', wsUrl);
+      console.log('[BigScreen] Creating new WebSocket connection:', wsUrl);
       this.ws = new WebSocket(wsUrl);
       
       this.ws.onopen = () => {
-        console.log('[BigScreen] WebSocket connected');
-        if (this.wsReconnectTimer) {
-          clearTimeout(this.wsReconnectTimer);
-          this.wsReconnectTimer = null;
-        }
+        console.log('[BigScreen] WebSocket connected successfully');
       };
       
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log('[BigScreen] Received message:', data);
-
+          console.log('[BigScreen] WebSocket message received:', data);
+          
           if (data.type === 'gift' && data.giftType === 'rocket') {
             const messageId = `${data.timestamp}-${data.sender}-${data.giftCount}`;
-            console.log('[BigScreen] Processing messageId:', messageId);
+            console.log('[BigScreen] Processing gift message:', messageId);
             
             if (!this.processedMessageIds.has(messageId)) {
               console.log('[BigScreen] New message, showing animation');
@@ -345,8 +355,9 @@ export default {
                 realName: data.realName,
                 giftCount: data.giftCount
               });
-
+              
               setTimeout(() => {
+                console.log('[BigScreen] Removing message from processed cache:', messageId);
                 this.processedMessageIds.delete(messageId);
               }, 5000);
             } else {
@@ -354,17 +365,7 @@ export default {
             }
           }
         } catch (error) {
-          console.error('[BigScreen] Error:', error);
-        }
-      };
-      
-      this.ws.onclose = () => {
-        console.log('[BigScreen] WebSocket disconnected');
-        if (this._isMount && !this.wsReconnectTimer) {
-          console.log('[BigScreen] Scheduling reconnection...');
-          this.wsReconnectTimer = setTimeout(() => {
-            this.initWebSocket();
-          }, 3000);
+          console.error('[BigScreen] Error processing message:', error);
         }
       };
     },
@@ -403,12 +404,17 @@ export default {
   },
   mounted() {
     this._isMount = true;
-    document.addEventListener('fullscreenchange', this.handleFullscreenChange)
-    document.addEventListener('webkitfullscreenchange', this.handleFullscreenChange)
-    document.addEventListener('mozfullscreenchange', this.handleFullscreenChange)
-    document.addEventListener('MSFullscreenChange', this.handleFullscreenChange)
+    console.log('[BigScreen] Component mounted');
     
-    this.initWebSocket()
+    // 添加调试信息
+    window._debugBigScreen = this;  // 用于调试
+    
+    document.addEventListener('fullscreenchange', this.handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', this.handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', this.handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', this.handleFullscreenChange);
+    
+    this.initWebSocket();
     window.addEventListener('beforeunload', () => {
       if (this.ws) {
         this.ws.close();

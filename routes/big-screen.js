@@ -8,27 +8,39 @@ let clients = new Set();
 
 // 创建 WebSocket 服务器
 const initWebSocket = (server) => {
+  console.log('\n[WebSocket] ====== Initializing WebSocket Server ======');
   const wss = new WebSocket.Server({ server, path: '/ws/gift' });
 
   wss.on('connection', (ws, req) => {
-    // 添加连接 ID 用于调试
     ws.id = Math.random().toString(36).substring(7);
-    console.log(`[WebSocket] Client ${ws.id} connected, total clients: ${clients.size}`);
+    console.log(`\n[WebSocket] ====== New Client Connection ======`);
+    console.log(`[WebSocket] Client ID: ${ws.id}`);
+    console.log(`[WebSocket] Client IP: ${req.socket.remoteAddress}`);
+    console.log(`[WebSocket] Current total clients: ${clients.size}`);
     
-    // 检查是否已经存在相同的连接
+    // 检查重复连接
+    let duplicateFound = false;
     clients.forEach(client => {
       if (client.id === ws.id) {
-        console.log(`[WebSocket] Duplicate connection detected, closing old connection: ${client.id}`);
+        console.log(`[WebSocket] Duplicate connection found: ${client.id}`);
+        duplicateFound = true;
         client.close();
         clients.delete(client);
       }
     });
     
     clients.add(ws);
+    console.log(`[WebSocket] Client added, new total: ${clients.size}`);
+    console.log(`[WebSocket] Active client IDs: ${Array.from(clients).map(c => c.id).join(', ')}`);
+    console.log('[WebSocket] ====== Connection Setup Complete ======\n');
     
     ws.on('close', () => {
+      console.log(`\n[WebSocket] ====== Client Disconnection ======`);
+      console.log(`[WebSocket] Client ${ws.id} disconnected`);
       clients.delete(ws);
-      console.log(`[WebSocket] Client ${ws.id} disconnected, remaining clients: ${clients.size}`);
+      console.log(`[WebSocket] Remaining clients: ${clients.size}`);
+      console.log(`[WebSocket] Remaining client IDs: ${Array.from(clients).map(c => c.id).join(', ')}`);
+      console.log('[WebSocket] ====== Disconnection Complete ======\n');
     });
   });
 
@@ -40,18 +52,22 @@ const messageCache = new Set();
 const MESSAGE_CACHE_TIMEOUT = 5000; // 5秒内的相同消息会被忽略
 
 const broadcastGift = (giftData) => {
-  console.log('[WebSocket] Broadcasting gift, data:', giftData); // 添加日志
+  console.log('\n[WebSocket] ====== Starting Gift Broadcast ======');
+  console.log('[WebSocket] Gift data:', JSON.stringify(giftData, null, 2));
   
   const messageId = `${giftData.timestamp}-${giftData.sender}-${giftData.giftCount}`;
-  console.log('[WebSocket] Generated messageId:', messageId); // 添加日志
+  console.log('[WebSocket] Generated messageId:', messageId);
   
   if (messageCache.has(messageId)) {
-    console.log('[WebSocket] Duplicate message detected, messageId:', messageId);
+    console.log('[WebSocket] Duplicate message detected, skipping broadcast');
+    console.log('[WebSocket] ====== Broadcast Skipped ======\n');
     return;
   }
   
   messageCache.add(messageId);
-  console.log('[WebSocket] Active clients:', clients.size); // 添加日志
+  console.log(`[WebSocket] Message added to cache. Cache size: ${messageCache.size}`);
+  console.log(`[WebSocket] Active clients count: ${clients.size}`);
+  console.log(`[WebSocket] Active client IDs: ${Array.from(clients).map(c => c.id).join(', ')}`);
   
   const message = JSON.stringify({
     type: 'gift',
@@ -59,12 +75,19 @@ const broadcastGift = (giftData) => {
     ...giftData
   });
   
+  let sentCount = 0;
   clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
-      console.log('[WebSocket] Sending to client...'); // 添加日志
+      console.log(`[WebSocket] Sending to client ${client.id}...`);
       client.send(message);
+      sentCount++;
+    } else {
+      console.log(`[WebSocket] Client ${client.id} not ready (state: ${client.readyState})`);
     }
   });
+  
+  console.log(`[WebSocket] Message sent to ${sentCount} clients`);
+  console.log('[WebSocket] ====== Broadcast Complete ======\n');
 };
 
 // REST API 路由
