@@ -177,7 +177,8 @@ export default {
       wsReconnectTimer: null,
       isAnimating: false,
       animationQueue: [],
-      _isMount: false
+      _isMount: false,
+      _hideGiftTimer: null
     }
   },
   computed: {
@@ -281,35 +282,41 @@ export default {
                          !!document.mozFullScreenElement || 
                          !!document.msFullscreenElement
     },
+    addEventListeners() {
+      document.addEventListener('fullscreenchange', this.handleFullscreenChange);
+      document.addEventListener('webkitfullscreenchange', this.handleFullscreenChange);
+      document.addEventListener('mozfullscreenchange', this.handleFullscreenChange);
+      document.addEventListener('MSFullscreenChange', this.handleFullscreenChange);
+    },
+    removeEventListeners() {
+      document.removeEventListener('fullscreenchange', this.handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', this.handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', this.handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', this.handleFullscreenChange);
+    },
     _showGiftEffect(gift) {
       console.log('[BigScreen] _showGiftEffect called with:', gift);
       
-      // 如果动画正在播放，先重置
-      if (this.showGift) {
-        console.log('[BigScreen] Animation in progress, resetting...');
-        this.showGift = false;
-        
-        // 使用 Promise 确保状态更新
-        Promise.resolve().then(() => {
-          console.log('[BigScreen] Starting new animation');
-          this.giftData = gift;
-          this.showGift = true;
-          
-          setTimeout(() => {
-            console.log('[BigScreen] Animation timeout completed');
-            this.showGift = false;
-          }, 3000);
-        });
-      } else {
-        console.log('[BigScreen] Starting animation directly');
+      // 取消之前的动画定时器
+      if (this._hideGiftTimer) {
+        clearTimeout(this._hideGiftTimer);
+        this._hideGiftTimer = null;
+      }
+      
+      // 重置动画状态
+      this.showGift = false;
+      
+      // 使用 nextTick 确保状态更新
+      this.$nextTick(() => {
         this.giftData = gift;
         this.showGift = true;
         
-        setTimeout(() => {
-          console.log('[BigScreen] Animation timeout completed');
+        // 保存定时器引用
+        this._hideGiftTimer = setTimeout(() => {
           this.showGift = false;
+          this._hideGiftTimer = null;
         }, 3000);
-      }
+      });
     },
     testEffects() {
       this._showGiftEffect({
@@ -321,12 +328,9 @@ export default {
     initWebSocket() {
       console.log('[BigScreen] Initializing WebSocket');
       
-      if (this.ws) {
-        console.log('[BigScreen] Closing existing WebSocket connection');
-        this.ws.close();
-        this.ws = null;
-      }
-
+      // 确保只有一个 WebSocket 连接
+      this.closeWebSocket();
+      
       const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${wsProtocol}//${location.host}/ws/gift`;
       
@@ -337,37 +341,46 @@ export default {
         console.log('[BigScreen] WebSocket connected successfully');
       };
       
-      this.ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log('[BigScreen] WebSocket message received:', data);
+      this.ws.onmessage = this.handleWebSocketMessage.bind(this);
+    },
+    closeWebSocket() {
+      if (this.ws) {
+        console.log('[BigScreen] Closing existing WebSocket connection');
+        this.ws.onclose = null; // 移除重连逻辑
+        this.ws.close();
+        this.ws = null;
+      }
+    },
+    handleWebSocketMessage(event) {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('[BigScreen] WebSocket message received:', data);
+        
+        if (data.type === 'gift' && data.giftType === 'rocket') {
+          const messageId = `${data.timestamp}-${data.sender}-${data.giftCount}`;
+          console.log('[BigScreen] Processing gift message:', messageId);
           
-          if (data.type === 'gift' && data.giftType === 'rocket') {
-            const messageId = `${data.timestamp}-${data.sender}-${data.giftCount}`;
-            console.log('[BigScreen] Processing gift message:', messageId);
+          if (!this.processedMessageIds.has(messageId)) {
+            console.log('[BigScreen] New message, showing animation');
+            this.processedMessageIds.add(messageId);
             
-            if (!this.processedMessageIds.has(messageId)) {
-              console.log('[BigScreen] New message, showing animation');
-              this.processedMessageIds.add(messageId);
-              
-              this._showGiftEffect({
-                senderAvatar: data.senderAvatar,
-                realName: data.realName,
-                giftCount: data.giftCount
-              });
-              
-              setTimeout(() => {
-                console.log('[BigScreen] Removing message from processed cache:', messageId);
-                this.processedMessageIds.delete(messageId);
-              }, 5000);
-            } else {
-              console.log('[BigScreen] Duplicate message ignored:', messageId);
-            }
+            this._showGiftEffect({
+              senderAvatar: data.senderAvatar,
+              realName: data.realName,
+              giftCount: data.giftCount
+            });
+            
+            setTimeout(() => {
+              console.log('[BigScreen] Removing message from processed cache:', messageId);
+              this.processedMessageIds.delete(messageId);
+            }, 5000);
+          } else {
+            console.log('[BigScreen] Duplicate message ignored:', messageId);
           }
-        } catch (error) {
-          console.error('[BigScreen] Error processing message:', error);
         }
-      };
+      } catch (error) {
+        console.error('[BigScreen] Error processing message:', error);
+      }
     },
     updateRankList(giftData) {
       const index = this.rankList.findIndex(item => 
@@ -407,12 +420,13 @@ export default {
     console.log('[BigScreen] Component mounted');
     
     // 添加调试信息
-    window._debugBigScreen = this;  // 用于调试
+    window._debugBigScreen = this;
     
-    document.addEventListener('fullscreenchange', this.handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', this.handleFullscreenChange);
-    document.addEventListener('mozfullscreenchange', this.handleFullscreenChange);
-    document.addEventListener('MSFullscreenChange', this.handleFullscreenChange);
+    // 移除之前可能存在的事件监听器
+    this.removeEventListeners();
+    
+    // 添加新的事件监听器
+    this.addEventListeners();
     
     this.initWebSocket();
     window.addEventListener('beforeunload', () => {
@@ -423,16 +437,12 @@ export default {
   },
   beforeUnmount() {
     this._isMount = false;
-    document.removeEventListener('fullscreenchange', this.handleFullscreenChange)
-    document.removeEventListener('webkitfullscreenchange', this.handleFullscreenChange)
-    document.removeEventListener('mozfullscreenchange', this.handleFullscreenChange)
-    document.removeEventListener('MSFullscreenChange', this.handleFullscreenChange)
+    this.removeEventListeners();
+    this.closeWebSocket();
     
-    if (this.ws) {
-      this.ws.close()
-    }
-    if (this.wsReconnectTimer) {
-      clearTimeout(this.wsReconnectTimer)
+    if (this._hideGiftTimer) {
+      clearTimeout(this._hideGiftTimer);
+      this._hideGiftTimer = null;
     }
   }
 }
