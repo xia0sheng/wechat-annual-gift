@@ -306,9 +306,10 @@ export default {
     },
     testEffects() {
       this.showGiftEffect({
-        sender: '测试用户',
-        type: '🚀火箭'
-      })
+        senderAvatar: '/default-avatar.png',
+        realName: '测试用户',
+        giftCount: 1
+      });
     },
     initWebSocket() {
       if (this.ws) {
@@ -409,21 +410,6 @@ export default {
       
       if (this.giftRecords.length > 20) {
         this.giftRecords.pop()
-      }
-    },
-    onWebSocketMessage(event) {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'gift' && !this.processedGiftIds.has(data.id)) {
-          this.processedGiftIds.add(data.id);
-          this.showGiftEffect({
-            senderAvatar: data.senderAvatar,
-            realName: data.realName,
-            giftCount: data.giftCount
-          });
-        }
-      } catch (error) {
-        console.error('WebSocket message error:', error);
       }
     }
   },
