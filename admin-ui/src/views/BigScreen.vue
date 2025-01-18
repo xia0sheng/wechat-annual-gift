@@ -7,6 +7,10 @@
         class="video-player"
         :src="currentVideo"
         @ended="handleVideoEnd"
+        @timeupdate="handleTimeUpdate"
+        @click="togglePlay"
+        @pause="isPaused = true"
+        @play="isPaused = false"
         controls
         controlsList="nodownload nofullscreen"
         disablePictureInPicture
@@ -16,6 +20,77 @@
         您的浏览器不支持 video 标签
       </video>
       
+      <!-- 自定义控制栏 -->
+      <div 
+        class="custom-controls" 
+        v-show="showControls || !isFullscreen"
+        @mouseenter="handleControlsEnter"
+        @mouseleave="handleControlsLeave"
+      >
+        <!-- 进度条 -->
+        <div class="progress-bar" @click="handleProgressClick">
+          <div class="progress-background"></div>
+          <div class="progress-current" :style="{ width: progress + '%' }"></div>
+          <div class="progress-handle" :style="{ left: progress + '%' }"></div>
+        </div>
+
+        <div class="controls-bottom">
+          <!-- 播放控制 -->
+          <div class="left-controls">
+            <el-button 
+              size="small" 
+              circle 
+              @click="togglePlay"
+            >
+              <i :class="isPaused ? 'el-icon-video-play' : 'el-icon-video-pause'"></i>
+            </el-button>
+
+            <!-- 音量控制 -->
+            <div class="volume-control">
+              <el-button 
+                size="small" 
+                circle 
+                @click="toggleMute"
+              >
+                <i :class="isMuted ? 'el-icon-turn-off-microphone' : 'el-icon-microphone'"></i>
+              </el-button>
+              <el-slider 
+                v-model="volume" 
+                :min="0" 
+                :max="100"
+                @input="handleVolumeChange"
+                class="volume-slider"
+              />
+            </div>
+
+            <!-- 时间显示 -->
+            <span class="time-display">
+              {{ formatTime(currentTime) }} / {{ formatTime(duration) }}
+            </span>
+          </div>
+
+          <!-- 右侧控制 -->
+          <div class="right-controls">
+            <!-- 播放列表控制 -->
+            <el-button 
+              size="small" 
+              @click="togglePlaylist"
+            >
+              {{ showPlaylist ? '隐藏列表' : '显示列表' }}
+            </el-button>
+
+            <!-- 全屏控制 -->
+            <el-button 
+              type="primary"
+              size="small"
+              @click="toggleFullscreen"
+            >
+              <i :class="isFullscreen ? 'el-icon-close' : 'el-icon-full-screen'"></i>
+            </el-button>
+          </div>
+        </div>
+      </div>
+
       <!-- 播放列表面板 -->
       <div class="playlist-panel" v-show="showPlaylist">
         <div class="playlist-header">
@@ -57,72 +132,26 @@
         </div>
       </div>
 
-      <!-- 视频控制面板 -->
-      <div class="video-controls">
-        <!-- 播放列表控制 -->
-        <div class="playlist-controls">
-          <el-button 
-            size="small" 
-            @click="togglePlaylist"
-          >
-            {{ showPlaylist ? '隐藏列表' : '显示列表' }}
-          </el-button>
-          <el-button 
-            size="small" 
-            @click="playPrevious" 
-            :disabled="!hasPrevious"
-          >
-            上一个
-          </el-button>
-          <el-button 
-            size="small" 
-            @click="playNext" 
-            :disabled="!hasNext"
-          >
-            下一个
-          </el-button>
-          <el-button 
-            size="small" 
-            @click="toggleLoop"
-            :type="isLooping ? 'primary' : ''"
-          >
-            {{ isLooping ? '循环开' : '循环关' }}
-          </el-button>
-        </div>
-
-        <!-- 全屏控制 -->
-        <div class="fullscreen-control">
-          <el-button 
-            type="primary"
-            size="small"
-            @click="toggleFullscreen"
-          >
-            <i :class="isFullscreen ? 'el-icon-close' : 'el-icon-full-screen'"></i>
-            {{ isFullscreen ? '退出全屏' : '全屏' }}
-          </el-button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 礼物动画容器 -->
-    <div class="gift-container" :class="{ 'fullscreen': isFullscreen }">
-      <transition name="gift">
-        <div v-if="showGift" class="gift-box">
-          <div class="gift-info">
-            <div class="gift-avatar">
-              <img :src="giftData.senderAvatar || '/default-avatar.png'" alt="avatar" />
-            </div>
-            <div class="gift-content">
-              <span class="sender">{{ giftData.realName }}</span>
-              <div class="gift-text">
-                送出了 
-                <span class="gift-icon">🚀</span>
-                <span class="gift-count">×{{ giftData.giftCount }}</span>
+      <!-- 礼物动画容器 -->
+      <div class="gift-container" :class="{ 'fullscreen': isFullscreen }">
+        <transition name="gift">
+          <div v-if="showGift" class="gift-box">
+            <div class="gift-info">
+              <div class="gift-avatar">
+                <img :src="giftData.senderAvatar || '/default-avatar.png'" alt="avatar" />
+              </div>
+              <div class="gift-content">
+                <span class="sender">{{ giftData.realName }}</span>
+                <div class="gift-text">
+                  送出了 
+                  <span class="gift-icon">🚀</span>
+                  <span class="gift-count">×{{ giftData.giftCount }}</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </transition>
+        </transition>
+      </div>
     </div>
   </div>
 </template>
@@ -170,7 +199,15 @@ export default {
       _animationInProgress: false,
       _animationQueue: [],
       _animationTimer: null,
-      _transitionTimer: null
+      _transitionTimer: null,
+      isPaused: true,
+      isMuted: false,
+      volume: 100,
+      currentTime: 0,
+      duration: 0,
+      progress: 0,
+      showControls: true,
+      controlsTimer: null,
     }
   },
   computed: {
@@ -459,7 +496,67 @@ export default {
         console.log('[BigScreen] Page visible, reconnecting WebSocket');
         this.initWebSocket();
       }
-    }
+    },
+    togglePlay() {
+      const video = this.$refs.videoRef;
+      if (video.paused) {
+        video.play();
+      } else {
+        video.pause();
+      }
+    },
+    handleTimeUpdate() {
+      const video = this.$refs.videoRef;
+      this.currentTime = video.currentTime;
+      this.duration = video.duration;
+      this.progress = (video.currentTime / video.duration) * 100;
+    },
+    handleProgressClick(e) {
+      const video = this.$refs.videoRef;
+      const rect = e.target.getBoundingClientRect();
+      const percent = (e.clientX - rect.left) / rect.width;
+      video.currentTime = percent * video.duration;
+    },
+    toggleMute() {
+      const video = this.$refs.videoRef;
+      video.muted = !video.muted;
+      this.isMuted = video.muted;
+    },
+    handleVolumeChange(value) {
+      const video = this.$refs.videoRef;
+      video.volume = value / 100;
+      if (value === 0) {
+        this.isMuted = true;
+      } else {
+        this.isMuted = false;
+      }
+    },
+    formatTime(seconds) {
+      if (!seconds) return '00:00';
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    },
+    handleControlsEnter() {
+      if (this.controlsTimer) {
+        clearTimeout(this.controlsTimer);
+        this.controlsTimer = null;
+      }
+      this.showControls = true;
+    },
+    handleControlsLeave() {
+      if (this.isFullscreen) {
+        this.controlsTimer = setTimeout(() => {
+          this.showControls = false;
+        }, 3000);
+      }
+    },
+    handleMouseMove() {
+      if (this.isFullscreen) {
+        this.showControls = true;
+        this.handleControlsLeave();
+      }
+    },
   },
   mounted() {
     this._isMount = true;
@@ -479,6 +576,7 @@ export default {
     
     // 添加页面可见性监听
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
+    document.addEventListener('mousemove', this.handleMouseMove);
   },
   beforeUnmount() {
     this._isMount = false;
@@ -497,6 +595,10 @@ export default {
     }
     this._animationQueue = [];
     this._animationInProgress = false;
+    document.removeEventListener('mousemove', this.handleMouseMove);
+    if (this.controlsTimer) {
+      clearTimeout(this.controlsTimer);
+    }
   }
 }
 </script>
@@ -741,6 +843,98 @@ export default {
 }
 
 :-ms-fullscreen .playlist-panel {
+  position: fixed;
+}
+
+.custom-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  padding: 20px;
+  transition: opacity 0.3s;
+  z-index: 2;
+}
+
+.controls-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.left-controls, .right-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.volume-slider {
+  width: 100px;
+}
+
+.progress-bar {
+  position: relative;
+  height: 4px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.progress-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.progress-current {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: #409EFF;
+  transition: width 0.1s linear;
+}
+
+.progress-handle {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: left 0.1s linear;
+}
+
+.time-display {
+  color: #fff;
+  font-size: 14px;
+  margin-left: 10px;
+}
+
+/* 全屏时的控制栏样式 */
+:fullscreen .custom-controls {
+  position: fixed;
+}
+
+:-webkit-full-screen .custom-controls {
+  position: fixed;
+}
+
+:-moz-full-screen .custom-controls {
+  position: fixed;
+}
+
+:-ms-fullscreen .custom-controls {
   position: fixed;
 }
 </style> 
