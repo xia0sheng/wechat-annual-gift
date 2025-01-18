@@ -16,10 +16,56 @@
         您的浏览器不支持 video 标签
       </video>
       
+      <!-- 播放列表面板 -->
+      <div class="playlist-panel" v-show="showPlaylist">
+        <div class="playlist-header">
+          <h3>播放列表</h3>
+          <el-button 
+            size="small" 
+            type="primary"
+            @click="$refs.fileInput.click()"
+          >
+            添加视频
+          </el-button>
+          <input
+            ref="fileInput"
+            type="file"
+            accept="video/*"
+            multiple
+            style="display: none"
+            @change="handleFileSelect"
+          >
+        </div>
+        
+        <div class="playlist-content">
+          <div 
+            v-for="(item, index) in playlist" 
+            :key="index"
+            class="playlist-item"
+            :class="{ active: index === currentVideoIndex }"
+          >
+            <span class="item-name">{{ item.name }}</span>
+            <el-button 
+              size="small" 
+              type="danger"
+              @click="removeVideo(index)"
+            >
+              删除
+            </el-button>
+          </div>
+        </div>
+      </div>
+
       <!-- 视频控制面板 -->
       <div class="video-controls">
         <!-- 播放列表控制 -->
         <div class="playlist-controls">
+          <el-button 
+            size="small" 
+            @click="togglePlaylist"
+          >
+            {{ showPlaylist ? '隐藏列表' : '显示列表' }}
+          </el-button>
           <el-button 
             size="small" 
             @click="playPrevious" 
@@ -528,6 +574,80 @@ export default {
 }
 
 :-ms-fullscreen .video-controls {
+  position: fixed;
+}
+
+/* 播放列表面板样式 */
+.playlist-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  z-index: 3;
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.playlist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.playlist-header h3 {
+  margin: 0;
+}
+
+.playlist-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.playlist-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+}
+
+.playlist-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.playlist-item.active {
+  background: rgba(64, 158, 255, 0.2);
+}
+
+.item-name {
+  flex: 1;
+  margin-right: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 确保播放列表在全屏时也能正确显示 */
+:fullscreen .playlist-panel {
+  position: fixed;
+}
+
+:-webkit-full-screen .playlist-panel {
+  position: fixed;
+}
+
+:-moz-full-screen .playlist-panel {
+  position: fixed;
+}
+
+:-ms-fullscreen .playlist-panel {
   position: fixed;
 }
 </style> 
