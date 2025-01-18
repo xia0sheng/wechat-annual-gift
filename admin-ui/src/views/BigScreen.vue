@@ -366,7 +366,22 @@ export default {
       }
     },
     togglePlaylist() {
-      this.showPlaylist = !this.showPlaylist
+      if (this.isFullscreen) {
+        // 如果在全屏状态，先退出全屏
+        this.exitFullscreen();
+      }
+      this.showPlaylist = !this.showPlaylist;
+    },
+    exitFullscreen() {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
     },
     toggleFullscreen() {
       const element = this.$refs.screenRef;
@@ -760,18 +775,26 @@ export default {
 
 .playlist-section {
   width: 300px;
-  background: rgba(0, 0, 0, 0.8);
+  background: #1a1a1a;  /* 改为纯黑色背景 */
   display: flex;
   flex-direction: column;
   border-left: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;  /* 确保文字为白色 */
 }
 
 .playlist-header {
   padding: 15px;
+  background: rgba(0, 0, 0, 0.3);  /* 添加略深的背景 */
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.playlist-header h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 16px;
 }
 
 .playlist-content {
@@ -786,7 +809,9 @@ export default {
   padding: 10px;
   border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  margin-bottom: 5px;
+  background: rgba(255, 255, 255, 0.05);  /* 添加轻微的背景色 */
 }
 
 .playlist-item:hover {
@@ -795,6 +820,74 @@ export default {
 
 .playlist-item.active {
   background: rgba(64, 158, 255, 0.2);
+}
+
+.item-index {
+  width: 30px;
+  color: #999;
+  text-align: center;
+}
+
+.item-name {
+  flex: 1;
+  margin: 0 10px;
+  color: #fff;  /* 确保文字为白色 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.delete-btn {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.playlist-item:hover .delete-btn {
+  opacity: 1;
+}
+
+/* 滚动条样式优化 */
+.playlist-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.playlist-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.playlist-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.playlist-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 控制按钮样式优化 */
+.text-btn {
+  --button-size: auto;
+  min-width: 80px;
+  height: 32px;
+  background: rgba(0, 0, 0, 0.7) !important;  /* 加深背景色 */
+  border-radius: 4px !important;
+  padding: 0 12px !important;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff !important;  /* 确保文字为白色 */
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;  /* 添加边框 */
+}
+
+.text-btn:hover {
+  background: rgba(64, 158, 255, 0.3) !important;
+  border-color: rgba(64, 158, 255, 0.5) !important;
+}
+
+.text-btn.is-active {
+  background: rgba(64, 158, 255, 0.5) !important;
+  border-color: rgba(64, 158, 255, 0.8) !important;
 }
 
 /* 全屏模式下隐藏播放列表 */
