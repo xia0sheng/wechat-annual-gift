@@ -259,6 +259,7 @@ export default {
       mouseMoving: false,
       mouseMovingTimer: null,
       isControlsHovered: false,
+      lastMouseMoveTime: Date.now(),
     }
   },
   computed: {
@@ -399,6 +400,9 @@ export default {
         } else if (element.msRequestFullscreen) {
           element.msRequestFullscreen();
         }
+        // 进入全屏后3秒隐藏控制栏
+        this.lastMouseMoveTime = Date.now();
+        this.handleMouseMove();
       } else {
         this.exitFullscreen();
       }
@@ -649,46 +653,26 @@ export default {
       const secs = Math.floor(seconds % 60);
       return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     },
-    handleControlsEnter() {
-      this.isControlsHovered = true;
+    handleMouseMove() {
+      if (!this.isFullscreen) return;
+      
+      // 显示控制栏
       this.showControls = true;
-      if (this.controlsTimer) {
-        clearTimeout(this.controlsTimer);
-        this.controlsTimer = null;
-      }
-    },
-    handleControlsLeave() {
-      this.isControlsHovered = false;
-      if (this.isFullscreen) {
-        this.startHideControlsTimer();
-      }
-    },
-    startHideControlsTimer() {
+      this.lastMouseMoveTime = Date.now();
+      
+      // 清除现有定时器
       if (this.controlsTimer) {
         clearTimeout(this.controlsTimer);
       }
+      
+      // 设置新的定时器
       this.controlsTimer = setTimeout(() => {
-        if (this.isFullscreen && !this.isControlsHovered && !this.mouseMoving) {
+        // 检查距离上次鼠标移动是否超过3秒
+        const now = Date.now();
+        if (now - this.lastMouseMoveTime >= 3000) {
           this.showControls = false;
         }
-      }, 1000); // 改为1秒
-    },
-    handleMouseMove() {
-      if (this.isFullscreen) {
-        this.showControls = true;
-        this.mouseMoving = true;
-        
-        if (this.mouseMovingTimer) {
-          clearTimeout(this.mouseMovingTimer);
-        }
-        
-        this.mouseMovingTimer = setTimeout(() => {
-          this.mouseMoving = false;
-          if (!this.isControlsHovered) {
-            this.startHideControlsTimer();
-          }
-        }, 100);
-      }
+      }, 3000);
     },
     handleDrawerClose() {
       this.showPlaylist = false;
@@ -942,6 +926,7 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
+  height: 120px; /* 固定高度 */
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.7) 40%, rgba(0, 0, 0, 0.9));
   transition: all 0.3s ease;
   z-index: 100;
@@ -1294,6 +1279,7 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
+  height: 120px; /* 固定高度 */
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.7) 40%, rgba(0, 0, 0, 0.9));
   transition: all 0.3s ease;
   z-index: 100;
@@ -1416,6 +1402,7 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
+  height: 120px; /* 固定高度 */
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.7) 40%, rgba(0, 0, 0, 0.9));
   transition: all 0.3s ease;
   z-index: 100;
