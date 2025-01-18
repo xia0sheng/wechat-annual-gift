@@ -8,7 +8,7 @@
         :src="currentVideo"
         @ended="handleVideoEnd"
         controls
-        controlsList="nodownload nofullscreen" // 禁用原生全屏按钮
+        controlsList="nodownload nofullscreen"
       >
         您的浏览器不支持 video 标签
       </video>
