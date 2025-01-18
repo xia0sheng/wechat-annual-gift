@@ -22,37 +22,61 @@
       
       <!-- 自定义控制栏 -->
       <div 
-        class="custom-controls" 
+        class="video-controls-wrapper"
         v-show="showControls || !isFullscreen"
         @mouseenter="handleControlsEnter"
         @mouseleave="handleControlsLeave"
       >
         <!-- 进度条 -->
-        <div class="progress-bar" @click="handleProgressClick">
-          <div class="progress-background"></div>
-          <div class="progress-current" :style="{ width: progress + '%' }"></div>
-          <div class="progress-handle" :style="{ left: progress + '%' }"></div>
+        <div class="progress-bar">
+          <el-slider
+            v-model="progress"
+            :min="0"
+            :max="100"
+            :format-tooltip="value => formatTime(duration * value / 100)"
+            @input="handleProgressDrag"
+          />
         </div>
 
-        <div class="controls-bottom">
-          <!-- 播放控制 -->
+        <div class="controls-panel">
           <div class="left-controls">
-            <el-button 
-              size="small" 
-              circle 
-              @click="togglePlay"
-            >
+            <!-- 播放/暂停 -->
+            <el-button class="control-btn" circle @click="togglePlay">
               <i :class="isPaused ? 'el-icon-video-play' : 'el-icon-video-pause'"></i>
+            </el-button>
+
+            <!-- 上一个/下一个 -->
+            <el-button 
+              class="control-btn" 
+              circle 
+              @click="playPrevious"
+              :disabled="!hasPrevious"
+            >
+              <i class="el-icon-arrow-left"></i>
+            </el-button>
+            <el-button 
+              class="control-btn" 
+              circle 
+              @click="playNext"
+              :disabled="!hasNext"
+            >
+              <i class="el-icon-arrow-right"></i>
+            </el-button>
+
+            <!-- 循环播放 -->
+            <el-button 
+              class="control-btn" 
+              circle 
+              @click="toggleLoop"
+              :type="isLooping ? 'primary' : ''"
+            >
+              <i class="el-icon-refresh"></i>
             </el-button>
 
             <!-- 音量控制 -->
             <div class="volume-control">
-              <el-button 
-                size="small" 
-                circle 
-                @click="toggleMute"
-              >
-                <i :class="isMuted ? 'el-icon-turn-off-microphone' : 'el-icon-microphone'"></i>
+              <el-button class="control-btn" circle @click="toggleMute">
+                <i :class="volumeIcon"></i>
               </el-button>
               <el-slider 
                 v-model="volume" 
@@ -69,20 +93,21 @@
             </span>
           </div>
 
-          <!-- 右侧控制 -->
           <div class="right-controls">
-            <!-- 播放列表控制 -->
+            <!-- 播放列表按钮 -->
             <el-button 
-              size="small" 
+              class="control-btn" 
+              circle 
               @click="togglePlaylist"
+              :type="showPlaylist ? 'primary' : ''"
             >
-              {{ showPlaylist ? '隐藏列表' : '显示列表' }}
+              <i class="el-icon-menu"></i>
             </el-button>
 
-            <!-- 全屏控制 -->
+            <!-- 全屏按钮 -->
             <el-button 
-              type="primary"
-              size="small"
+              class="control-btn" 
+              circle 
               @click="toggleFullscreen"
             >
               <i :class="isFullscreen ? 'el-icon-close' : 'el-icon-full-screen'"></i>
@@ -91,13 +116,21 @@
         </div>
       </div>
 
-      <!-- 播放列表面板 -->
-      <div class="playlist-panel" v-show="showPlaylist">
+      <!-- 播放列表抽屉 -->
+      <el-drawer
+        v-model="showPlaylist"
+        title="播放列表"
+        :direction="isFullscreen ? 'rtl' : 'rtl'"
+        :size="300"
+        :with-header="true"
+        custom-class="playlist-drawer"
+        :modal="false"
+        :show-close="true"
+      >
         <div class="playlist-header">
-          <h3>播放列表</h3>
           <el-button 
-            size="small" 
             type="primary"
+            size="small"
             @click="$refs.fileInput.click()"
           >
             添加视频
@@ -120,17 +153,20 @@
             :class="{ active: index === currentVideoIndex }"
             @click="playVideo(index)"
           >
+            <span class="item-index">{{ index + 1 }}</span>
             <span class="item-name">{{ item.name }}</span>
             <el-button 
+              class="delete-btn"
               size="small" 
               type="danger"
+              circle
               @click.stop="removeVideo(index)"
             >
-              删除
+              <i class="el-icon-delete"></i>
             </el-button>
           </div>
         </div>
-      </div>
+      </el-drawer>
 
       <!-- 礼物动画容器 -->
       <div class="gift-container" :class="{ 'fullscreen': isFullscreen }">
@@ -219,6 +255,15 @@ export default {
     },
     hasPrevious() {
       return this.currentVideoIndex > 0
+    },
+    volumeIcon() {
+      if (this.isMuted || this.volume === 0) {
+        return 'el-icon-turn-off-microphone';
+      } else if (this.volume < 50) {
+        return 'el-icon-microphone';
+      } else {
+        return 'el-icon-mic';
+      }
     }
   },
   methods: {
@@ -511,11 +556,11 @@ export default {
       this.duration = video.duration;
       this.progress = (video.currentTime / video.duration) * 100;
     },
-    handleProgressClick(e) {
+    handleProgressDrag(value) {
       const video = this.$refs.videoRef;
-      const rect = e.target.getBoundingClientRect();
-      const percent = (e.clientX - rect.left) / rect.width;
-      video.currentTime = percent * video.duration;
+      if (video) {
+        video.currentTime = (value / 100) * video.duration;
+      }
     },
     toggleMute() {
       const video = this.$refs.videoRef;
@@ -935,6 +980,154 @@ export default {
 }
 
 :-ms-fullscreen .custom-controls {
+  position: fixed;
+}
+
+.video-controls-wrapper {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 10px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  transition: opacity 0.3s;
+  z-index: 100;
+}
+
+.controls-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+}
+
+.left-controls, .right-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #fff;
+}
+
+.control-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 150px;
+}
+
+.volume-slider {
+  width: 80px;
+}
+
+.time-display {
+  color: #fff;
+  font-size: 13px;
+  margin: 0 10px;
+}
+
+/* 播放列表抽屉样式 */
+.playlist-drawer {
+  background: rgba(0, 0, 0, 0.9) !important;
+  color: #fff;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.playlist-header {
+  padding: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.playlist-content {
+  padding: 10px;
+}
+
+.playlist-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.playlist-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.playlist-item.active {
+  background: rgba(64, 158, 255, 0.2);
+}
+
+.item-index {
+  width: 24px;
+  color: #999;
+}
+
+.item-name {
+  flex: 1;
+  margin: 0 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.delete-btn {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.playlist-item:hover .delete-btn {
+  opacity: 1;
+}
+
+/* 进度条样式优化 */
+.progress-bar {
+  padding: 10px 0;
+}
+
+.progress-bar :deep(.el-slider__runway) {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.progress-bar :deep(.el-slider__bar) {
+  height: 4px;
+  background: #409EFF;
+}
+
+.progress-bar :deep(.el-slider__button) {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #fff;
+  background: #409EFF;
+}
+
+/* 全屏样式 */
+:fullscreen .video-controls-wrapper {
+  position: fixed;
+}
+
+:-webkit-full-screen .video-controls-wrapper {
+  position: fixed;
+}
+
+:-moz-full-screen .video-controls-wrapper {
+  position: fixed;
+}
+
+:-ms-fullscreen .video-controls-wrapper {
   position: fixed;
 }
 </style> 
