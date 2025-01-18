@@ -11,11 +11,10 @@
         @click="togglePlay"
         @pause="isPaused = true"
         @play="isPaused = false"
-        controls
-        controlsList="nodownload nofullscreen"
+        controlsList="nodownload nofullscreen noremoteplayback"
+        nocontrols
         disablePictureInPicture
         :disableRemotePlayback="true"
-        :controlslist="'nodownload nofullscreen noremoteplayback'"
       >
         您的浏览器不支持 video 标签
       </video>
@@ -96,19 +95,21 @@
           <div class="right-controls">
             <!-- 播放列表按钮 -->
             <el-button 
-              class="control-btn" 
+              class="control-btn"
+              :class="{ 'is-active': showPlaylist }"
               circle 
               @click="togglePlaylist"
-              :type="showPlaylist ? 'primary' : ''"
+              data-title="播放列表"
             >
               <i class="el-icon-menu"></i>
             </el-button>
 
             <!-- 全屏按钮 -->
             <el-button 
-              class="control-btn" 
+              class="control-btn"
               circle 
               @click="toggleFullscreen"
+              data-title="全屏"
             >
               <i :class="isFullscreen ? 'el-icon-close' : 'el-icon-full-screen'"></i>
             </el-button>
@@ -988,9 +989,9 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 10px;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
-  transition: opacity 0.3s;
+  padding: 20px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7) 40%, rgba(0, 0, 0, 0.9));
+  transition: all 0.3s ease;
   z-index: 100;
 }
 
@@ -1004,7 +1005,33 @@ export default {
 .left-controls, .right-controls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  margin-right: 10px;
+}
+
+.right-controls .control-btn {
+  position: relative;
+}
+
+.right-controls .control-btn::after {
+  content: attr(data-title);
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.right-controls .control-btn:hover::after {
+  opacity: 1;
 }
 
 .control-btn {
@@ -1012,12 +1039,23 @@ export default {
   height: 32px;
   padding: 0;
   border: none;
-  background: transparent;
-  color: #fff;
+  background: rgba(0, 0, 0, 0.5) !important;
+  color: #fff !important;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
 }
 
 .control-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.2) !important;
+  transform: scale(1.1);
+}
+
+.control-btn i {
+  font-size: 16px;
+  line-height: 1;
 }
 
 .volume-control {
@@ -1025,6 +1063,9 @@ export default {
   align-items: center;
   gap: 8px;
   width: 150px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 16px;
+  padding: 0 8px;
 }
 
 .volume-slider {
@@ -1095,39 +1136,38 @@ export default {
 /* 进度条样式优化 */
 .progress-bar {
   padding: 10px 0;
+  margin-bottom: 10px;
 }
 
-.progress-bar :deep(.el-slider__runway) {
-  height: 4px;
-  background: rgba(255, 255, 255, 0.2);
+.progress-bar:hover :deep(.el-slider__runway) {
+  height: 6px;
 }
 
-.progress-bar :deep(.el-slider__bar) {
-  height: 4px;
-  background: #409EFF;
-}
-
-.progress-bar :deep(.el-slider__button) {
-  width: 12px;
-  height: 12px;
-  border: 2px solid #fff;
-  background: #409EFF;
+.progress-bar:hover :deep(.el-slider__button) {
+  transform: scale(1.2);
 }
 
 /* 全屏样式 */
 :fullscreen .video-controls-wrapper {
-  position: fixed;
+  padding-bottom: 40px;
 }
 
-:-webkit-full-screen .video-controls-wrapper {
-  position: fixed;
+/* 播放列表按钮激活状态 */
+.control-btn.is-active {
+  background: rgba(64, 158, 255, 0.5) !important;
+  color: #fff !important;
 }
 
-:-moz-full-screen .video-controls-wrapper {
-  position: fixed;
+/* 禁用视频原生控制栏 */
+.video-player::-webkit-media-controls {
+  display: none !important;
 }
 
-:-ms-fullscreen .video-controls-wrapper {
-  position: fixed;
+.video-player::-webkit-media-controls-enclosure {
+  display: none !important;
+}
+
+.video-player::-webkit-media-controls-panel {
+  display: none !important;
 }
 </style> 
