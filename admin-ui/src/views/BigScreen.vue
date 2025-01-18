@@ -97,55 +97,34 @@
           <div class="right-controls">
             <!-- 播放列表按钮 -->
             <div class="control-item">
-              <el-tooltip 
-                content="播放列表" 
-                placement="top" 
-                :show-after="300"
+              <el-button 
+                class="control-btn text-btn"
+                :class="{ 'is-active': showPlaylist }"
+                @click="togglePlaylist"
               >
-                <el-button 
-                  class="control-btn"
-                  :class="{ 'is-active': showPlaylist }"
-                  circle 
-                  @click="togglePlaylist"
-                >
-                  <i class="iconfont icon-playlist"></i>
-                </el-button>
-              </el-tooltip>
+                播放列表
+              </el-button>
             </div>
 
             <!-- 循环模式按钮 -->
             <div class="control-item">
-              <el-tooltip 
-                :content="loopModeText" 
-                placement="top" 
-                :show-after="300"
+              <el-button 
+                class="control-btn text-btn"
+                :class="{ 'is-active': loopMode !== 'none' }"
+                @click="toggleLoopMode"
               >
-                <el-button 
-                  class="control-btn"
-                  :class="{ 'is-active': loopMode !== 'none' }"
-                  circle 
-                  @click="toggleLoopMode"
-                >
-                  <i class="iconfont" :class="loopModeIcon"></i>
-                </el-button>
-              </el-tooltip>
+                {{ loopModeText }}
+              </el-button>
             </div>
 
             <!-- 全屏按钮 -->
             <div class="control-item">
-              <el-tooltip 
-                :content="isFullscreen ? '退出全屏' : '全屏'" 
-                placement="top" 
-                :show-after="300"
+              <el-button 
+                class="control-btn text-btn"
+                @click="toggleFullscreen"
               >
-                <el-button 
-                  class="control-btn"
-                  circle 
-                  @click="toggleFullscreen"
-                >
-                  <i class="iconfont" :class="isFullscreen ? 'icon-exitfullscreen' : 'icon-fullscreen'"></i>
-                </el-button>
-              </el-tooltip>
+                {{ isFullscreen ? '退出全屏' : '全屏' }}
+              </el-button>
             </div>
           </div>
         </div>
@@ -1112,7 +1091,7 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.6) 40%, rgba(0, 0, 0, 0.8));
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7) 40%, rgba(0, 0, 0, 0.9));
   transition: all 0.3s ease;
   z-index: 100;
   padding: 20px;
@@ -1205,5 +1184,65 @@ export default {
   -webkit-backdrop-filter: blur(10px);
 }
 
-/* ... 其他样式保持不变 ... */
+/* 文字按钮样式 */
+.text-btn {
+  --button-size: auto;
+  min-width: 80px;
+  height: 32px;
+  background: rgba(0, 0, 0, 0.5) !important;
+  border-radius: 4px !important;
+  padding: 0 12px !important;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.text-btn:hover {
+  background: rgba(64, 158, 255, 0.3) !important;
+  transform: none;
+}
+
+.text-btn.is-active {
+  background: rgba(64, 158, 255, 0.5) !important;
+}
+
+/* 控制栏样式优化 */
+.video-controls-wrapper {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7) 40%, rgba(0, 0, 0, 0.9));
+  transition: all 0.3s ease;
+  z-index: 100;
+  padding: 20px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.controls-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+}
+
+.right-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-right: 10px;
+}
+
+/* 移除不需要的图标相关样式 */
+.iconfont,
+.icon-playlist:before,
+.icon-loop-none:before,
+.icon-loop-single:before,
+.icon-loop-all:before,
+.icon-fullscreen:before,
+.icon-exitfullscreen:before {
+  display: none;
+}
 </style> 
