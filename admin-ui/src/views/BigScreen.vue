@@ -106,7 +106,23 @@
 
     <!-- 礼物动画容器 -->
     <div class="gift-container" :class="{ 'fullscreen': isFullscreen }">
-      <!-- 礼物动画内容 -->
+      <transition name="gift">
+        <div v-if="showGift" class="gift-box">
+          <div class="gift-info">
+            <div class="gift-avatar">
+              <img :src="giftData.senderAvatar || '/default-avatar.png'" alt="avatar" />
+            </div>
+            <div class="gift-content">
+              <span class="sender">{{ giftData.realName }}</span>
+              <div class="gift-text">
+                送出了 
+                <span class="gift-icon">🚀</span>
+                <span class="gift-count">×{{ giftData.giftCount }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
     </div>
   </div>
 </template>
@@ -534,31 +550,107 @@ export default {
 }
 
 .gift-container {
-  position: fixed;
-  top: 0;
+  position: absolute;
   left: 0;
+  right: 0;
+  top: 0;
+  bottom: v-bind('showPlaylist ? "30%" : "0"');
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.gift-box {
+  position: fixed;
+  left: 50%;
+  bottom: 20%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 50px;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.gift-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.gift-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #ffd700;
+}
+
+.gift-avatar img {
   width: 100%;
   height: 100%;
-  pointer-events: none;
-  z-index: 3;
+  object-fit: cover;
 }
 
-/* 全屏状态下的样式调整 */
-:fullscreen .gift-container {
-  position: absolute;
+.gift-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-/* 兼容不同浏览器的全屏样式 */
-:-webkit-full-screen .gift-container {
-  position: absolute;
+.sender {
+  color: #ffd700;
+  font-weight: bold;
+  font-size: 16px;
 }
 
-:-moz-full-screen .gift-container {
-  position: absolute;
+.gift-text {
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
 }
 
-:-ms-fullscreen .gift-container {
-  position: absolute;
+.gift-icon {
+  font-size: 24px;
+}
+
+.gift-count {
+  color: #ffd700;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+/* 礼物动画 */
+.gift-enter-active {
+  animation: giftIn 0.5s ease-out;
+}
+
+.gift-leave-active {
+  animation: giftOut 0.3s ease-in;
+}
+
+@keyframes giftIn {
+  0% {
+    transform: translateX(-50%) translateY(100px) scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes giftOut {
+  0% {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) translateY(-100px) scale(0.8);
+    opacity: 0;
+  }
 }
 
 /* 确保控制面板在全屏时也能显示 */
