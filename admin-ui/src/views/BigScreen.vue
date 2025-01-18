@@ -43,12 +43,13 @@
             :key="index"
             class="playlist-item"
             :class="{ active: index === currentVideoIndex }"
+            @click="playVideo(index)"
           >
             <span class="item-name">{{ item.name }}</span>
             <el-button 
               size="small" 
               type="danger"
-              @click="removeVideo(index)"
+              @click.stop="removeVideo(index)"
             >
               删除
             </el-button>
@@ -183,15 +184,15 @@ export default {
     playVideo(index) {
       this.currentVideoIndex = index
       this.$nextTick(() => {
-        if (this.$refs.videoPlayer) {
-          this.$refs.videoPlayer.loop = this.isLooping
-          this.$refs.videoPlayer.play()
+        if (this.$refs.videoRef) {
+          this.$refs.videoRef.loop = this.isLooping
+          this.$refs.videoRef.play()
         }
       })
     },
     removeVideo(index) {
       if (index === this.currentVideoIndex) {
-        this.$refs.videoPlayer.pause()
+        this.$refs.videoRef.pause()
         if (this.hasNext) {
           this.playNext()
         } else if (this.hasPrevious) {
@@ -216,13 +217,13 @@ export default {
     },
     toggleLoop() {
       this.isLooping = !this.isLooping
-      if (this.$refs.videoPlayer) {
-        this.$refs.videoPlayer.loop = this.isLooping
+      if (this.$refs.videoRef) {
+        this.$refs.videoRef.loop = this.isLooping
       }
     },
     handleVideoEnd() {
       if (this.isLooping) {
-        this.$refs.videoPlayer.play()
+        this.$refs.videoRef.play()
       } else if (this.hasNext) {
         this.playNext()
       }
