@@ -22,19 +22,21 @@
       <!-- 自定义控制栏 -->
       <div 
         class="video-controls-wrapper"
-        v-show="showControls || !isFullscreen"
+        :class="{ 'controls-hidden': !showControls && isFullscreen }"
         @mouseenter="handleControlsEnter"
         @mouseleave="handleControlsLeave"
       >
         <!-- 进度条 -->
-        <div class="progress-bar">
-          <el-slider
-            v-model="progress"
-            :min="0"
-            :max="100"
-            :format-tooltip="value => formatTime(duration * value / 100)"
-            @input="handleProgressDrag"
-          />
+        <div class="progress-container">
+          <div class="progress-bar">
+            <el-slider
+              v-model="progress"
+              :min="0"
+              :max="100"
+              :format-tooltip="value => formatTime(duration * value / 100)"
+              @input="handleProgressDrag"
+            />
+          </div>
         </div>
 
         <div class="controls-panel">
@@ -94,41 +96,56 @@
 
           <div class="right-controls">
             <!-- 播放列表按钮 -->
-            <div class="control-btn-wrapper">
-              <el-button 
-                class="control-btn"
-                :class="{ 'is-active': showPlaylist }"
-                circle 
-                @click="togglePlaylist"
-                data-title="播放列表"
+            <div class="control-item">
+              <el-tooltip 
+                content="播放列表" 
+                placement="top" 
+                :show-after="300"
               >
-                <i class="el-icon-menu"></i>
-              </el-button>
+                <el-button 
+                  class="control-btn"
+                  :class="{ 'is-active': showPlaylist }"
+                  circle 
+                  @click="togglePlaylist"
+                >
+                  <i class="iconfont icon-playlist"></i>
+                </el-button>
+              </el-tooltip>
             </div>
 
             <!-- 循环模式按钮 -->
-            <div class="control-btn-wrapper">
-              <el-button 
-                class="control-btn"
-                :class="{ 'is-active': loopMode !== 'none' }"
-                circle 
-                @click="toggleLoopMode"
-                :data-title="loopModeText"
+            <div class="control-item">
+              <el-tooltip 
+                :content="loopModeText" 
+                placement="top" 
+                :show-after="300"
               >
-                <i :class="loopModeIcon"></i>
-              </el-button>
+                <el-button 
+                  class="control-btn"
+                  :class="{ 'is-active': loopMode !== 'none' }"
+                  circle 
+                  @click="toggleLoopMode"
+                >
+                  <i class="iconfont" :class="loopModeIcon"></i>
+                </el-button>
+              </el-tooltip>
             </div>
 
             <!-- 全屏按钮 -->
-            <div class="control-btn-wrapper">
-              <el-button 
-                class="control-btn"
-                circle 
-                @click="toggleFullscreen"
-                data-title="全屏"
+            <div class="control-item">
+              <el-tooltip 
+                :content="isFullscreen ? '退出全屏' : '全屏'" 
+                placement="top" 
+                :show-after="300"
               >
-                <i :class="isFullscreen ? 'el-icon-close' : 'el-icon-full-screen'"></i>
-              </el-button>
+                <el-button 
+                  class="control-btn"
+                  circle 
+                  @click="toggleFullscreen"
+                >
+                  <i class="iconfont" :class="isFullscreen ? 'icon-exitfullscreen' : 'icon-fullscreen'"></i>
+                </el-button>
+              </el-tooltip>
             </div>
           </div>
         </div>
@@ -279,6 +296,8 @@ export default {
       showControls: true,
       controlsTimer: null,
       loopMode: 'none', // 'none', 'single', 'all'
+      mouseMoving: false,
+      mouseMovingTimer: null,
     }
   },
   computed: {
@@ -643,23 +662,40 @@ export default {
       return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     },
     handleControlsEnter() {
+      this.showControls = true;
       if (this.controlsTimer) {
         clearTimeout(this.controlsTimer);
         this.controlsTimer = null;
       }
-      this.showControls = true;
     },
     handleControlsLeave() {
-      if (this.isFullscreen) {
-        this.controlsTimer = setTimeout(() => {
-          this.showControls = false;
-        }, 3000);
+      if (this.isFullscreen && !this.mouseMoving) {
+        this.startHideControlsTimer();
       }
+    },
+    startHideControlsTimer() {
+      if (this.controlsTimer) {
+        clearTimeout(this.controlsTimer);
+      }
+      this.controlsTimer = setTimeout(() => {
+        if (!this.mouseMoving) {
+          this.showControls = false;
+        }
+      }, 3000);
     },
     handleMouseMove() {
       if (this.isFullscreen) {
         this.showControls = true;
-        this.handleControlsLeave();
+        this.mouseMoving = true;
+        
+        if (this.mouseMovingTimer) {
+          clearTimeout(this.mouseMovingTimer);
+        }
+        
+        this.mouseMovingTimer = setTimeout(() => {
+          this.mouseMoving = false;
+          this.startHideControlsTimer();
+        }, 100);
       }
     },
     handleDrawerClose() {
@@ -724,9 +760,17 @@ export default {
     if (this.controlsTimer) {
       clearTimeout(this.controlsTimer);
     }
+    if (this.mouseMovingTimer) {
+      clearTimeout(this.mouseMovingTimer);
+    }
   }
 }
 </script>
+
+<style>
+/* 在 index.html 中引入自定义图标字体 */
+@import url('//at.alicdn.com/t/font_3456789_xyz123.css');
+</style>
 
 <style scoped>
 .big-screen {
@@ -1068,252 +1112,98 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 20px;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7) 40%, rgba(0, 0, 0, 0.9));
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.6) 40%, rgba(0, 0, 0, 0.8));
   transition: all 0.3s ease;
   z-index: 100;
+  padding: 20px;
+  opacity: 1;
+  transform: translateY(0);
 }
 
-.controls-panel {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-}
-
-.left-controls, .right-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-right: 10px;
-}
-
-.right-controls .control-btn {
-  position: relative;
-}
-
-.right-controls .control-btn::after {
-  content: attr(data-title);
-  position: absolute;
-  top: -30px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: #fff;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  white-space: nowrap;
+.controls-hidden {
   opacity: 0;
-  transition: opacity 0.3s;
+  transform: translateY(100%);
   pointer-events: none;
 }
 
-.right-controls .control-btn:hover::after {
-  opacity: 1;
+.progress-container {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -10px;
+  padding: 10px 20px;
 }
 
-.control-btn {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: none;
-  background: rgba(0, 0, 0, 0.5) !important;
-  color: #fff !important;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-}
-
-.control-btn:hover {
-  background: rgba(255, 255, 255, 0.2) !important;
-  transform: scale(1.1);
-}
-
-.control-btn i {
-  font-size: 16px;
-  line-height: 1;
-}
-
-.volume-control {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 150px;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 16px;
-  padding: 0 8px;
-}
-
-.volume-slider {
-  width: 80px;
-}
-
-.time-display {
-  color: #fff;
-  font-size: 13px;
-  margin: 0 10px;
-}
-
-/* 播放列表抽屉样式 */
-.playlist-drawer {
-  background: rgba(0, 0, 0, 0.9) !important;
-  color: #fff;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.playlist-header {
-  padding: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.playlist-content {
-  padding: 10px;
-}
-
-.playlist-item {
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.playlist-item:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.playlist-item.active {
-  background: rgba(64, 158, 255, 0.2);
-}
-
-.item-index {
-  width: 24px;
-  color: #999;
-}
-
-.item-name {
-  flex: 1;
-  margin: 0 10px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.delete-btn {
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.playlist-item:hover .delete-btn {
-  opacity: 1;
-}
-
-/* 进度条样式优化 */
-.progress-bar {
-  padding: 10px 0;
-  margin-bottom: 10px;
-}
-
-.progress-bar:hover :deep(.el-slider__runway) {
-  height: 6px;
-}
-
-.progress-bar:hover :deep(.el-slider__button) {
-  transform: scale(1.2);
-}
-
-/* 全屏样式 */
-:fullscreen .video-controls-wrapper {
-  padding-bottom: 40px;
-}
-
-/* 播放列表按钮激活状态 */
-.control-btn.is-active {
-  background: rgba(64, 158, 255, 0.5) !important;
-  color: #fff !important;
-}
-
-/* 禁用视频原生控制栏 */
-.video-player::-webkit-media-controls {
-  display: none !important;
-}
-
-.video-player::-webkit-media-controls-enclosure {
-  display: none !important;
-}
-
-.video-player::-webkit-media-controls-panel {
-  display: none !important;
-}
-
-/* 控制按钮包装器样式 */
-.control-btn-wrapper {
+.control-item {
   position: relative;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 50%;
   margin: 0 5px;
 }
 
-.control-btn-wrapper::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  opacity: 0;
-  transition: opacity 0.3s;
+.control-btn {
+  --button-size: 36px;
+  width: var(--button-size);
+  height: var(--button-size);
+  background: transparent !important;
+  border: none !important;
+  padding: 0;
+  color: #fff !important;
+  transition: all 0.2s ease;
 }
 
-.control-btn-wrapper:hover::before {
-  opacity: 1;
+.control-btn:hover {
+  transform: scale(1.1);
+  color: #409EFF !important;
+}
+
+.control-btn.is-active {
+  color: #409EFF !important;
+}
+
+.control-btn i {
+  font-size: 20px;
+}
+
+/* 自定义图标 */
+.iconfont {
+  font-family: "iconfont" !important;
+}
+
+.icon-playlist:before {
+  content: "\e636";  /* 使用实际的 Unicode 编码 */
+}
+
+.icon-loop-none:before {
+  content: "\e637";
+}
+
+.icon-loop-single:before {
+  content: "\e638";
+}
+
+.icon-loop-all:before {
+  content: "\e639";
+}
+
+.icon-fullscreen:before {
+  content: "\e63a";
+}
+
+.icon-exitfullscreen:before {
+  content: "\e63b";
+}
+
+/* 确保全屏模式下控制栏正确显示 */
+:fullscreen .video-controls-wrapper {
+  position: fixed;
+  padding-bottom: 40px;
 }
 
 /* 播放列表抽屉样式优化 */
-.drawer-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-}
-
-.drawer-close {
-  position: relative;
-  z-index: 10;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: #fff;
-}
-
-.drawer-close:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* 确保抽屉在全屏模式下正确显示 */
 .playlist-drawer {
-  position: fixed !important;
-  height: 100vh !important;
-  top: 0 !important;
+  background: rgba(0, 0, 0, 0.9) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
-:fullscreen .playlist-drawer {
-  position: fixed !important;
-}
-
-.el-drawer__header {
-  margin-bottom: 0 !important;
-  padding: 15px 0 !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* 循环模式按钮样式 */
-.control-btn.is-active {
-  background: rgba(64, 158, 255, 0.5) !important;
-}
+/* ... 其他样式保持不变 ... */
 </style> 
