@@ -258,6 +258,7 @@ export default {
       loopMode: 'none', // 'none', 'single', 'all'
       mouseMoving: false,
       mouseMovingTimer: null,
+      isControlsHovered: false,
     }
   },
   computed: {
@@ -367,10 +368,15 @@ export default {
     },
     togglePlaylist() {
       if (this.isFullscreen) {
-        // 如果在全屏状态，先退出全屏
+        // 先退出全屏
         this.exitFullscreen();
+        // 等待退出全屏完成后再显示播放列表
+        setTimeout(() => {
+          this.showPlaylist = true;
+        }, 100);
+      } else {
+        this.showPlaylist = !this.showPlaylist;
       }
-      this.showPlaylist = !this.showPlaylist;
     },
     exitFullscreen() {
       if (document.exitFullscreen) {
@@ -386,18 +392,20 @@ export default {
     toggleFullscreen() {
       const element = this.$refs.screenRef;
       
-      if (!document.fullscreenElement) {
-        element.requestFullscreen().then(() => {
-          this.isFullscreen = true;
-        }).catch(err => {
-          console.error('全屏失败:', err);
-        });
+      if (!this.isFullscreen) {
+        if (element.requestFullscreen) {
+          element.requestFullscreen();
+        } else if (element.webkitRequestFullscreen) {
+          element.webkitRequestFullscreen();
+        } else if (element.msRequestFullscreen) {
+          element.msRequestFullscreen();
+        }
+        // 进入全屏后启动隐藏定时器
+        setTimeout(() => {
+          this.startHideControlsTimer();
+        }, 100);
       } else {
-        document.exitFullscreen().then(() => {
-          this.isFullscreen = false;
-        }).catch(err => {
-          console.error('退出全屏失败:', err);
-        });
+        this.exitFullscreen();
       }
     },
     handleFullscreenChange() {
@@ -637,6 +645,7 @@ export default {
       return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     },
     handleControlsEnter() {
+      this.isControlsHovered = true;
       this.showControls = true;
       if (this.controlsTimer) {
         clearTimeout(this.controlsTimer);
@@ -644,6 +653,7 @@ export default {
       }
     },
     handleControlsLeave() {
+      this.isControlsHovered = false;
       if (this.isFullscreen) {
         this.startHideControlsTimer();
       }
@@ -653,10 +663,10 @@ export default {
         clearTimeout(this.controlsTimer);
       }
       this.controlsTimer = setTimeout(() => {
-        if (this.isFullscreen && !this.mouseMoving) {
+        if (this.isFullscreen && !this.isControlsHovered && !this.mouseMoving) {
           this.showControls = false;
         }
-      }, 3000);
+      }, 1000); // 改为1秒
     },
     handleMouseMove() {
       if (this.isFullscreen) {
@@ -669,7 +679,9 @@ export default {
         
         this.mouseMovingTimer = setTimeout(() => {
           this.mouseMoving = false;
-          this.startHideControlsTimer();
+          if (!this.isControlsHovered) {
+            this.startHideControlsTimer();
+          }
         }, 100);
       }
     },
@@ -693,6 +705,24 @@ export default {
         this.$refs.videoRef.loop = this.loopMode === 'single';
       }
     },
+  },
+  watch: {
+    // 监听全屏状态变化
+    isFullscreen(newVal) {
+      if (newVal) {
+        // 进入全屏后1秒隐藏控制栏
+        setTimeout(() => {
+          this.startHideControlsTimer();
+        }, 100);
+      } else {
+        // 退出全屏时显示控制栏
+        this.showControls = true;
+        if (this.controlsTimer) {
+          clearTimeout(this.controlsTimer);
+          this.controlsTimer = null;
+        }
+      }
+    }
   },
   mounted() {
     this._isMount = true;
