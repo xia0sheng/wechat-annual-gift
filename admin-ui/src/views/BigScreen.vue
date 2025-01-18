@@ -94,25 +94,42 @@
 
           <div class="right-controls">
             <!-- 播放列表按钮 -->
-            <el-button 
-              class="control-btn"
-              :class="{ 'is-active': showPlaylist }"
-              circle 
-              @click="togglePlaylist"
-              data-title="播放列表"
-            >
-              <i class="el-icon-menu"></i>
-            </el-button>
+            <div class="control-btn-wrapper">
+              <el-button 
+                class="control-btn"
+                :class="{ 'is-active': showPlaylist }"
+                circle 
+                @click="togglePlaylist"
+                data-title="播放列表"
+              >
+                <i class="el-icon-menu"></i>
+              </el-button>
+            </div>
+
+            <!-- 循环模式按钮 -->
+            <div class="control-btn-wrapper">
+              <el-button 
+                class="control-btn"
+                :class="{ 'is-active': loopMode !== 'none' }"
+                circle 
+                @click="toggleLoopMode"
+                :data-title="loopModeText"
+              >
+                <i :class="loopModeIcon"></i>
+              </el-button>
+            </div>
 
             <!-- 全屏按钮 -->
-            <el-button 
-              class="control-btn"
-              circle 
-              @click="toggleFullscreen"
-              data-title="全屏"
-            >
-              <i :class="isFullscreen ? 'el-icon-close' : 'el-icon-full-screen'"></i>
-            </el-button>
+            <div class="control-btn-wrapper">
+              <el-button 
+                class="control-btn"
+                circle 
+                @click="toggleFullscreen"
+                data-title="全屏"
+              >
+                <i :class="isFullscreen ? 'el-icon-close' : 'el-icon-full-screen'"></i>
+              </el-button>
+            </div>
           </div>
         </div>
       </div>
@@ -127,7 +144,23 @@
         custom-class="playlist-drawer"
         :modal="false"
         :show-close="true"
+        :close-on-click-modal="false"
+        :before-close="handleDrawerClose"
       >
+        <template #title>
+          <div class="drawer-header">
+            <span>播放列表</span>
+            <el-button
+              class="drawer-close"
+              circle
+              size="small"
+              @click="handleDrawerClose"
+            >
+              <i class="el-icon-close"></i>
+            </el-button>
+          </div>
+        </template>
+
         <div class="playlist-header">
           <el-button 
             type="primary"
@@ -245,6 +278,7 @@ export default {
       progress: 0,
       showControls: true,
       controlsTimer: null,
+      loopMode: 'none', // 'none', 'single', 'all'
     }
   },
   computed: {
@@ -264,6 +298,26 @@ export default {
         return 'el-icon-microphone';
       } else {
         return 'el-icon-mic';
+      }
+    },
+    loopModeIcon() {
+      switch(this.loopMode) {
+        case 'single':
+          return 'el-icon-refresh-right';
+        case 'all':
+          return 'el-icon-refresh';
+        default:
+          return 'el-icon-refresh-left';
+      }
+    },
+    loopModeText() {
+      switch(this.loopMode) {
+        case 'single':
+          return '单个循环';
+        case 'all':
+          return '列表循环';
+        default:
+          return '不循环';
       }
     }
   },
@@ -321,10 +375,15 @@ export default {
       }
     },
     handleVideoEnd() {
-      if (this.isLooping) {
-        this.$refs.videoRef.play()
-      } else if (this.hasNext) {
-        this.playNext()
+      if (this.loopMode === 'single') {
+        this.$refs.videoRef.play();
+      } else if (this.loopMode === 'all') {
+        if (this.hasNext) {
+          this.playNext();
+        } else {
+          // 播放列表第一个视频
+          this.playVideo(0);
+        }
       }
     },
     togglePlaylist() {
@@ -601,6 +660,26 @@ export default {
       if (this.isFullscreen) {
         this.showControls = true;
         this.handleControlsLeave();
+      }
+    },
+    handleDrawerClose() {
+      this.showPlaylist = false;
+    },
+    toggleLoopMode() {
+      switch(this.loopMode) {
+        case 'none':
+          this.loopMode = 'single';
+          break;
+        case 'single':
+          this.loopMode = 'all';
+          break;
+        case 'all':
+          this.loopMode = 'none';
+          break;
+      }
+      // 更新视频循环状态
+      if (this.$refs.videoRef) {
+        this.$refs.videoRef.loop = this.loopMode === 'single';
       }
     },
   },
@@ -1169,5 +1248,72 @@ export default {
 
 .video-player::-webkit-media-controls-panel {
   display: none !important;
+}
+
+/* 控制按钮包装器样式 */
+.control-btn-wrapper {
+  position: relative;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  margin: 0 5px;
+}
+
+.control-btn-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.control-btn-wrapper:hover::before {
+  opacity: 1;
+}
+
+/* 播放列表抽屉样式优化 */
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.drawer-close {
+  position: relative;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+}
+
+.drawer-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 确保抽屉在全屏模式下正确显示 */
+.playlist-drawer {
+  position: fixed !important;
+  height: 100vh !important;
+  top: 0 !important;
+}
+
+:fullscreen .playlist-drawer {
+  position: fixed !important;
+}
+
+.el-drawer__header {
+  margin-bottom: 0 !important;
+  padding: 15px 0 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 循环模式按钮样式 */
+.control-btn.is-active {
+  background: rgba(64, 158, 255, 0.5) !important;
 }
 </style> 
