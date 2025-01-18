@@ -1,163 +1,165 @@
 <template>
   <div class="big-screen" ref="screenRef">
-    <!-- 视频播放器容器 -->
-    <div class="video-container">
-      <video
-        ref="videoRef"
-        class="video-player"
-        :src="currentVideo"
-        @ended="handleVideoEnd"
-        @timeupdate="handleTimeUpdate"
-        @click="togglePlay"
-        @pause="isPaused = true"
-        @play="isPaused = false"
-        controlsList="nodownload nofullscreen noremoteplayback"
-        nocontrols
-        disablePictureInPicture
-        :disableRemotePlayback="true"
-      >
-        您的浏览器不支持 video 标签
-      </video>
-      
-      <!-- 自定义控制栏 -->
-      <div 
-        class="video-controls-wrapper"
-        :class="{ 'controls-hidden': !showControls && isFullscreen }"
-        @mouseenter="handleControlsEnter"
-        @mouseleave="handleControlsLeave"
-      >
-        <!-- 进度条 -->
-        <div class="progress-container">
-          <div class="progress-bar">
-            <el-slider
-              v-model="progress"
-              :min="0"
-              :max="100"
-              :format-tooltip="value => formatTime(duration * value / 100)"
-              @input="handleProgressDrag"
-            />
+    <div class="screen-content">
+      <!-- 左侧视频区域 -->
+      <div class="video-section" :class="{ 'full-width': !showPlaylist }">
+        <div class="video-container">
+          <!-- 视频播放器 -->
+          <video
+            ref="videoRef"
+            class="video-player"
+            :src="currentVideo"
+            @ended="handleVideoEnd"
+            @timeupdate="handleTimeUpdate"
+            @click="togglePlay"
+            @pause="isPaused = true"
+            @play="isPaused = false"
+            controlsList="nodownload nofullscreen noremoteplayback"
+            nocontrols
+            disablePictureInPicture
+            :disableRemotePlayback="true"
+          >
+            您的浏览器不支持 video 标签
+          </video>
+
+          <!-- 控制栏 -->
+          <div 
+            class="video-controls-wrapper"
+            :class="{ 'controls-hidden': !showControls && isFullscreen }"
+            @mouseenter="handleControlsEnter"
+            @mouseleave="handleControlsLeave"
+          >
+            <!-- 进度条 -->
+            <div class="progress-container">
+              <div class="progress-bar">
+                <el-slider
+                  v-model="progress"
+                  :min="0"
+                  :max="100"
+                  :format-tooltip="value => formatTime(duration * value / 100)"
+                  @input="handleProgressDrag"
+                />
+              </div>
+            </div>
+
+            <div class="controls-panel">
+              <div class="left-controls">
+                <!-- 播放/暂停 -->
+                <el-button class="control-btn" circle @click="togglePlay">
+                  <i :class="isPaused ? 'el-icon-video-play' : 'el-icon-video-pause'"></i>
+                </el-button>
+
+                <!-- 上一个/下一个 -->
+                <el-button 
+                  class="control-btn" 
+                  circle 
+                  @click="playPrevious"
+                  :disabled="!hasPrevious"
+                >
+                  <i class="el-icon-arrow-left"></i>
+                </el-button>
+                <el-button 
+                  class="control-btn" 
+                  circle 
+                  @click="playNext"
+                  :disabled="!hasNext"
+                >
+                  <i class="el-icon-arrow-right"></i>
+                </el-button>
+
+                <!-- 循环播放 -->
+                <el-button 
+                  class="control-btn" 
+                  circle 
+                  @click="toggleLoop"
+                  :type="isLooping ? 'primary' : ''"
+                >
+                  <i class="el-icon-refresh"></i>
+                </el-button>
+
+                <!-- 音量控制 -->
+                <div class="volume-control">
+                  <el-button class="control-btn" circle @click="toggleMute">
+                    <i :class="volumeIcon"></i>
+                  </el-button>
+                  <el-slider 
+                    v-model="volume" 
+                    :min="0" 
+                    :max="100"
+                    @input="handleVolumeChange"
+                    class="volume-slider"
+                  />
+                </div>
+
+                <!-- 时间显示 -->
+                <span class="time-display">
+                  {{ formatTime(currentTime) }} / {{ formatTime(duration) }}
+                </span>
+              </div>
+
+              <div class="right-controls">
+                <!-- 播放列表按钮 -->
+                <div class="control-item">
+                  <el-button 
+                    class="control-btn text-btn"
+                    :class="{ 'is-active': showPlaylist }"
+                    @click="togglePlaylist"
+                  >
+                    播放列表
+                  </el-button>
+                </div>
+
+                <!-- 循环模式按钮 -->
+                <div class="control-item">
+                  <el-button 
+                    class="control-btn text-btn"
+                    :class="{ 'is-active': loopMode !== 'none' }"
+                    @click="toggleLoopMode"
+                  >
+                    {{ loopModeText }}
+                  </el-button>
+                </div>
+
+                <!-- 全屏按钮 -->
+                <div class="control-item">
+                  <el-button 
+                    class="control-btn text-btn"
+                    @click="toggleFullscreen"
+                  >
+                    {{ isFullscreen ? '退出全屏' : '全屏' }}
+                  </el-button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div class="controls-panel">
-          <div class="left-controls">
-            <!-- 播放/暂停 -->
-            <el-button class="control-btn" circle @click="togglePlay">
-              <i :class="isPaused ? 'el-icon-video-play' : 'el-icon-video-pause'"></i>
-            </el-button>
-
-            <!-- 上一个/下一个 -->
-            <el-button 
-              class="control-btn" 
-              circle 
-              @click="playPrevious"
-              :disabled="!hasPrevious"
-            >
-              <i class="el-icon-arrow-left"></i>
-            </el-button>
-            <el-button 
-              class="control-btn" 
-              circle 
-              @click="playNext"
-              :disabled="!hasNext"
-            >
-              <i class="el-icon-arrow-right"></i>
-            </el-button>
-
-            <!-- 循环播放 -->
-            <el-button 
-              class="control-btn" 
-              circle 
-              @click="toggleLoop"
-              :type="isLooping ? 'primary' : ''"
-            >
-              <i class="el-icon-refresh"></i>
-            </el-button>
-
-            <!-- 音量控制 -->
-            <div class="volume-control">
-              <el-button class="control-btn" circle @click="toggleMute">
-                <i :class="volumeIcon"></i>
-              </el-button>
-              <el-slider 
-                v-model="volume" 
-                :min="0" 
-                :max="100"
-                @input="handleVolumeChange"
-                class="volume-slider"
-              />
-            </div>
-
-            <!-- 时间显示 -->
-            <span class="time-display">
-              {{ formatTime(currentTime) }} / {{ formatTime(duration) }}
-            </span>
-          </div>
-
-          <div class="right-controls">
-            <!-- 播放列表按钮 -->
-            <div class="control-item">
-              <el-button 
-                class="control-btn text-btn"
-                :class="{ 'is-active': showPlaylist }"
-                @click="togglePlaylist"
-              >
-                播放列表
-              </el-button>
-            </div>
-
-            <!-- 循环模式按钮 -->
-            <div class="control-item">
-              <el-button 
-                class="control-btn text-btn"
-                :class="{ 'is-active': loopMode !== 'none' }"
-                @click="toggleLoopMode"
-              >
-                {{ loopModeText }}
-              </el-button>
-            </div>
-
-            <!-- 全屏按钮 -->
-            <div class="control-item">
-              <el-button 
-                class="control-btn text-btn"
-                @click="toggleFullscreen"
-              >
-                {{ isFullscreen ? '退出全屏' : '全屏' }}
-              </el-button>
-            </div>
+          <!-- 礼物动画容器 -->
+          <div class="gift-container" :class="{ 'fullscreen': isFullscreen }">
+            <transition name="gift">
+              <div v-if="showGift" class="gift-box">
+                <div class="gift-info">
+                  <div class="gift-avatar">
+                    <img :src="giftData.senderAvatar || '/default-avatar.png'" alt="avatar" />
+                  </div>
+                  <div class="gift-content">
+                    <span class="sender">{{ giftData.realName }}</span>
+                    <div class="gift-text">
+                      送出了 
+                      <span class="gift-icon">🚀</span>
+                      <span class="gift-count">×{{ giftData.giftCount }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </transition>
           </div>
         </div>
       </div>
 
-      <!-- 播放列表抽屉 -->
-      <el-drawer
-        v-model="showPlaylist"
-        title="播放列表"
-        :direction="isFullscreen ? 'rtl' : 'rtl'"
-        :size="300"
-        :with-header="true"
-        custom-class="playlist-drawer"
-        :modal="false"
-        :show-close="true"
-        :close-on-click-modal="false"
-        :before-close="handleDrawerClose"
-      >
-        <template #title>
-          <div class="drawer-header">
-            <span>播放列表</span>
-            <el-button
-              class="drawer-close"
-              circle
-              size="small"
-              @click="handleDrawerClose"
-            >
-              <i class="el-icon-close"></i>
-            </el-button>
-          </div>
-        </template>
-
+      <!-- 右侧播放列表 -->
+      <div class="playlist-section" v-show="showPlaylist">
         <div class="playlist-header">
+          <h3>播放列表</h3>
           <el-button 
             type="primary"
             size="small"
@@ -196,27 +198,6 @@
             </el-button>
           </div>
         </div>
-      </el-drawer>
-
-      <!-- 礼物动画容器 -->
-      <div class="gift-container" :class="{ 'fullscreen': isFullscreen }">
-        <transition name="gift">
-          <div v-if="showGift" class="gift-box">
-            <div class="gift-info">
-              <div class="gift-avatar">
-                <img :src="giftData.senderAvatar || '/default-avatar.png'" alt="avatar" />
-              </div>
-              <div class="gift-content">
-                <span class="sender">{{ giftData.realName }}</span>
-                <div class="gift-text">
-                  送出了 
-                  <span class="gift-icon">🚀</span>
-                  <span class="gift-count">×{{ giftData.giftCount }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </transition>
       </div>
     </div>
   </div>
@@ -648,7 +629,7 @@ export default {
       }
     },
     handleControlsLeave() {
-      if (this.isFullscreen && !this.mouseMoving) {
+      if (this.isFullscreen) {
         this.startHideControlsTimer();
       }
     },
@@ -657,7 +638,7 @@ export default {
         clearTimeout(this.controlsTimer);
       }
       this.controlsTimer = setTimeout(() => {
-        if (!this.mouseMoving) {
+        if (this.isFullscreen && !this.mouseMoving) {
           this.showControls = false;
         }
       }, 3000);
@@ -757,6 +738,92 @@ export default {
   width: 100%;
   height: 100vh;
   background: #1a1a1a;
+}
+
+.screen-content {
+  display: flex;
+  gap: 1px;
+  height: calc(100vh - 60px); /* 减去顶部标题的高度 */
+  background: #1a1a1a;
+}
+
+.video-section {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.video-section.full-width {
+  flex: 1;
+}
+
+.playlist-section {
+  width: 300px;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.playlist-header {
+  padding: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.playlist-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.playlist-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.playlist-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.playlist-item.active {
+  background: rgba(64, 158, 255, 0.2);
+}
+
+/* 全屏模式下隐藏播放列表 */
+:fullscreen .playlist-section {
+  display: none;
+}
+
+/* 修复全屏菜单栏自动隐藏 */
+.controls-hidden {
+  opacity: 0;
+  transform: translateY(100%);
+  pointer-events: none;
+}
+
+.video-controls-wrapper {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7) 40%, rgba(0, 0, 0, 0.9));
+  transition: all 0.3s ease;
+  z-index: 100;
+  padding: 20px;
+}
+
+/* 确保全屏时控制栏正确显示 */
+:fullscreen .video-controls-wrapper {
+  position: fixed;
+  padding-bottom: 40px;
 }
 
 .video-container {
