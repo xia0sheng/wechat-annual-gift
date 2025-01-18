@@ -26,8 +26,6 @@
           <div 
             class="video-controls-wrapper"
             :class="{ 'controls-hidden': !showControls && isFullscreen }"
-            @mouseenter="handleControlsEnter"
-            @mouseleave="handleControlsLeave"
           >
             <!-- 进度条 -->
             <div class="progress-container">
@@ -258,7 +256,6 @@ export default {
       loopMode: 'none', // 'none', 'single', 'all'
       mouseMoving: false,
       mouseMovingTimer: null,
-      isControlsHovered: false,
       lastMouseMoveTime: Date.now(),
     }
   },
@@ -400,24 +397,19 @@ export default {
         } else if (element.msRequestFullscreen) {
           element.msRequestFullscreen();
         }
-        // 进入全屏后3秒隐藏控制栏
-        this.lastMouseMoveTime = Date.now();
-        this.handleMouseMove();
       } else {
         this.exitFullscreen();
       }
     },
     handleFullscreenChange() {
       this.isFullscreen = !!document.fullscreenElement;
-      if (this.isFullscreen) {
-        // 进入全屏后1秒隐藏控制栏
-        setTimeout(() => {
-          if (!this.isControlsHovered) {
-            this.showControls = false;
-          }
-        }, 1000);
-      } else {
+      if (!this.isFullscreen) {
+        // 退出全屏时显示控制栏
         this.showControls = true;
+        if (this.controlsTimer) {
+          clearTimeout(this.controlsTimer);
+          this.controlsTimer = null;
+        }
       }
     },
     addEventListeners() {
@@ -656,7 +648,7 @@ export default {
     handleMouseMove() {
       if (!this.isFullscreen) return;
       
-      // 显示控制栏
+      // 立即显示控制栏
       this.showControls = true;
       this.lastMouseMoveTime = Date.now();
       
@@ -665,9 +657,8 @@ export default {
         clearTimeout(this.controlsTimer);
       }
       
-      // 设置新的定时器
+      // 3秒后检查是否还没有鼠标移动
       this.controlsTimer = setTimeout(() => {
-        // 检查距离上次鼠标移动是否超过3秒
         const now = Date.now();
         if (now - this.lastMouseMoveTime >= 3000) {
           this.showControls = false;
@@ -696,15 +687,10 @@ export default {
     },
   },
   watch: {
-    // 监听全屏状态变化
+    // 简化全屏状态监听
     isFullscreen(newVal) {
-      if (newVal) {
-        // 进入全屏后1秒隐藏控制栏
-        setTimeout(() => {
-          this.startHideControlsTimer();
-        }, 100);
-      } else {
-        // 退出全屏时显示控制栏
+      if (!newVal) {
+        // 退出全屏时重置状态
         this.showControls = true;
         if (this.controlsTimer) {
           clearTimeout(this.controlsTimer);
@@ -926,7 +912,6 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 120px; /* 固定高度 */
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.7) 40%, rgba(0, 0, 0, 0.9));
   transition: all 0.3s ease;
   z-index: 100;
@@ -1279,7 +1264,6 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 120px; /* 固定高度 */
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.7) 40%, rgba(0, 0, 0, 0.9));
   transition: all 0.3s ease;
   z-index: 100;
@@ -1402,7 +1386,6 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 120px; /* 固定高度 */
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.7) 40%, rgba(0, 0, 0, 0.9));
   transition: all 0.3s ease;
   z-index: 100;
