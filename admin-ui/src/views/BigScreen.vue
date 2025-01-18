@@ -3,7 +3,7 @@
     <div class="screen-content">
       <!-- 左侧视频区域 -->
       <div class="video-section" :class="{ 'full-width': !showPlaylist }">
-        <div class="video-container" :class="{ 'hide-cursor': shouldHideCursor }" @mousemove="handleMouseMove">
+        <div class="video-container">
           <!-- 视频播放器 -->
           <video
             ref="videoRef"
@@ -25,10 +25,7 @@
           <!-- 控制栏 -->
           <div 
             class="video-controls-wrapper"
-            :class="{
-              'controls-hidden': shouldHideControls,
-              'no-hover': isFullscreen && !showControls
-            }"
+            :class="{ 'controls-hidden': !showControls && isFullscreen }"
             @mouseenter="handleControlsEnter"
             @mouseleave="handleControlsLeave"
           >
@@ -262,8 +259,6 @@ export default {
       mouseMoving: false,
       mouseMovingTimer: null,
       isControlsHovered: false,
-      mouseLastMoved: Date.now(),
-      mouseTimer: null,
     }
   },
   computed: {
@@ -304,14 +299,6 @@ export default {
         default:
           return '不循环';
       }
-    },
-    shouldHideControls() {
-      return this.isFullscreen && 
-             !this.isControlsHovered && 
-             Date.now() - this.mouseLastMoved > 2000;
-    },
-    shouldHideCursor() {
-      return this.isFullscreen && this.shouldHideControls;
     }
   },
   methods: {
@@ -381,7 +368,6 @@ export default {
     },
     togglePlaylist() {
       if (this.isFullscreen) {
-        // 先退出全屏
         this.exitFullscreen();
         // 等待退出全屏完成后再显示播放列表
         setTimeout(() => {
@@ -413,16 +399,22 @@ export default {
         } else if (element.msRequestFullscreen) {
           element.msRequestFullscreen();
         }
-        // 进入全屏后启动隐藏定时器
-        setTimeout(() => {
-          this.startHideControlsTimer();
-        }, 100);
       } else {
         this.exitFullscreen();
       }
     },
     handleFullscreenChange() {
       this.isFullscreen = !!document.fullscreenElement;
+      if (this.isFullscreen) {
+        // 进入全屏后1秒隐藏控制栏
+        setTimeout(() => {
+          if (!this.isControlsHovered) {
+            this.showControls = false;
+          }
+        }, 1000);
+      } else {
+        this.showControls = true;
+      }
     },
     addEventListeners() {
       document.addEventListener('fullscreenchange', this.handleFullscreenChange);
@@ -659,10 +651,17 @@ export default {
     },
     handleControlsEnter() {
       this.isControlsHovered = true;
-      this.mouseLastMoved = Date.now();
+      this.showControls = true;
+      if (this.controlsTimer) {
+        clearTimeout(this.controlsTimer);
+        this.controlsTimer = null;
+      }
     },
     handleControlsLeave() {
       this.isControlsHovered = false;
+      if (this.isFullscreen) {
+        this.startHideControlsTimer();
+      }
     },
     startHideControlsTimer() {
       if (this.controlsTimer) {
@@ -674,20 +673,22 @@ export default {
         }
       }, 1000); // 改为1秒
     },
-    handleMouseMove(event) {
-      // 更新鼠标最后移动时间
-      this.mouseLastMoved = Date.now();
-      
-      // 清除之前的定时器
-      if (this.mouseTimer) {
-        clearTimeout(this.mouseTimer);
+    handleMouseMove() {
+      if (this.isFullscreen) {
+        this.showControls = true;
+        this.mouseMoving = true;
+        
+        if (this.mouseMovingTimer) {
+          clearTimeout(this.mouseMovingTimer);
+        }
+        
+        this.mouseMovingTimer = setTimeout(() => {
+          this.mouseMoving = false;
+          if (!this.isControlsHovered) {
+            this.startHideControlsTimer();
+          }
+        }, 100);
       }
-      
-      // 设置新的定时器
-      this.mouseTimer = setTimeout(() => {
-        // 2秒后强制更新计算属性
-        this.$forceUpdate();
-      }, 2000);
     },
     handleDrawerClose() {
       this.showPlaylist = false;
@@ -769,8 +770,8 @@ export default {
     if (this.controlsTimer) {
       clearTimeout(this.controlsTimer);
     }
-    if (this.mouseTimer) {
-      clearTimeout(this.mouseTimer);
+    if (this.mouseMovingTimer) {
+      clearTimeout(this.mouseMovingTimer);
     }
   }
 }
@@ -952,6 +953,359 @@ export default {
 .controls-hidden {
   opacity: 0;
   transform: translateY(100%);
+  pointer-events: none;
+}
+
+/* 确保全屏时控制栏正确显示 */
+:fullscreen .video-controls-wrapper {
+  position: fixed;
+  padding-bottom: 40px;
+}
+
+.video-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.video-player {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* 隐藏原生全屏按钮 */
+.video-player::-webkit-media-controls-fullscreen-button {
+  display: none !important;
+}
+
+/* 视频控制面板样式 */
+.video-controls {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  padding: 10px 20px;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 2;
+}
+
+.playlist-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.fullscreen-control {
+  margin-left: auto;
+}
+
+.gift-container {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: v-bind('showPlaylist ? "30%" : "0"');
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.gift-box {
+  position: fixed;
+  left: 50%;
+  bottom: 20%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 50px;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.gift-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.gift-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #ffd700;
+}
+
+.gift-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gift-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sender {
+  color: #ffd700;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.gift-text {
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.gift-icon {
+  font-size: 24px;
+}
+
+.gift-count {
+  color: #ffd700;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+/* 礼物动画 */
+.gift-enter-active {
+  animation: giftIn 0.5s ease-out;
+}
+
+.gift-leave-active {
+  animation: giftOut 0.3s ease-in;
+}
+
+@keyframes giftIn {
+  0% {
+    transform: translateX(-50%) translateY(100px) scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes giftOut {
+  0% {
+    transform: translateX(-50%) translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) translateY(-100px) scale(0.8);
+    opacity: 0;
+  }
+}
+
+/* 确保控制面板在全屏时也能显示 */
+:fullscreen .video-controls {
+  position: fixed;
+}
+
+:-webkit-full-screen .video-controls {
+  position: fixed;
+}
+
+:-moz-full-screen .video-controls {
+  position: fixed;
+}
+
+:-ms-fullscreen .video-controls {
+  position: fixed;
+}
+
+/* 播放列表面板样式 */
+.playlist-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  z-index: 3;
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.playlist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.playlist-header h3 {
+  margin: 0;
+}
+
+.playlist-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.playlist-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+}
+
+.playlist-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.playlist-item.active {
+  background: rgba(64, 158, 255, 0.2);
+}
+
+.item-name {
+  flex: 1;
+  margin-right: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 确保播放列表在全屏时也能正确显示 */
+:fullscreen .playlist-panel {
+  position: fixed;
+}
+
+:-webkit-full-screen .playlist-panel {
+  position: fixed;
+}
+
+:-moz-full-screen .playlist-panel {
+  position: fixed;
+}
+
+:-ms-fullscreen .playlist-panel {
+  position: fixed;
+}
+
+.custom-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  padding: 20px;
+  transition: opacity 0.3s;
+  z-index: 2;
+}
+
+.controls-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.left-controls, .right-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.volume-slider {
+  width: 100px;
+}
+
+.progress-bar {
+  position: relative;
+  height: 4px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.progress-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.progress-current {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: #409EFF;
+  transition: width 0.1s linear;
+}
+
+.progress-handle {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: left 0.1s linear;
+}
+
+.time-display {
+  color: #fff;
+  font-size: 14px;
+  margin-left: 10px;
+}
+
+/* 全屏时的控制栏样式 */
+:fullscreen .custom-controls {
+  position: fixed;
+}
+
+:-webkit-full-screen .custom-controls {
+  position: fixed;
+}
+
+:-moz-full-screen .custom-controls {
+  position: fixed;
+}
+
+:-ms-fullscreen .custom-controls {
+  position: fixed;
+}
+
+.video-controls-wrapper {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7) 40%, rgba(0, 0, 0, 0.9));
+  transition: all 0.3s ease;
+  z-index: 100;
+  padding: 20px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.controls-hidden {
+  opacity: 0;
+  transform: translateY(100%);
+  pointer-events: none;
 }
 
 .progress-container {
@@ -1093,51 +1447,5 @@ export default {
 .icon-fullscreen:before,
 .icon-exitfullscreen:before {
   display: none;
-}
-
-/* 隐藏鼠标样式 */
-.hide-cursor {
-  cursor: none;
-}
-
-/* 禁用鼠标事件 */
-.no-hover {
-  pointer-events: none;
-}
-
-/* 当鼠标移动到控制栏时恢复鼠标事件 */
-.no-hover:hover {
-  pointer-events: auto;
-}
-
-/* 确保视频播放器不显示原生控件 */
-video::-webkit-media-controls {
-  display: none !important;
-}
-
-video::-webkit-media-controls-enclosure {
-  display: none !important;
-}
-
-video::-webkit-media-controls-panel {
-  display: none !important;
-}
-
-video::-webkit-media-controls-panel-container {
-  display: none !important;
-}
-
-video::-webkit-media-controls-start-playback-button {
-  display: none !important;
-}
-
-/* 全屏时的样式 */
-:fullscreen .video-controls-wrapper {
-  position: fixed;
-  padding-bottom: 40px;
-}
-
-:fullscreen .video-container {
-  background: #000;
 }
 </style> 
