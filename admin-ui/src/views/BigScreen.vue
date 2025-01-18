@@ -9,20 +9,55 @@
         @ended="handleVideoEnd"
         controls
         controlsList="nodownload nofullscreen"
+        disablePictureInPicture
+        :disableRemotePlayback="true"
+        :controlslist="'nodownload nofullscreen noremoteplayback'"
       >
         您的浏览器不支持 video 标签
       </video>
       
-      <!-- 自定义控制栏 -->
-      <div class="custom-controls">
-        <el-button @click="toggleFullscreen">
-          <i :class="isFullscreen ? 'el-icon-close' : 'el-icon-full-screen'"></i>
-          {{ isFullscreen ? '退出全屏' : '全屏' }}
-        </el-button>
+      <!-- 视频控制面板 -->
+      <div class="video-controls">
+        <!-- 播放列表控制 -->
+        <div class="playlist-controls">
+          <el-button 
+            size="small" 
+            @click="playPrevious" 
+            :disabled="!hasPrevious"
+          >
+            上一个
+          </el-button>
+          <el-button 
+            size="small" 
+            @click="playNext" 
+            :disabled="!hasNext"
+          >
+            下一个
+          </el-button>
+          <el-button 
+            size="small" 
+            @click="toggleLoop"
+            :type="isLooping ? 'primary' : ''"
+          >
+            {{ isLooping ? '循环开' : '循环关' }}
+          </el-button>
+        </div>
+
+        <!-- 全屏控制 -->
+        <div class="fullscreen-control">
+          <el-button 
+            type="primary"
+            size="small"
+            @click="toggleFullscreen"
+          >
+            <i :class="isFullscreen ? 'el-icon-close' : 'el-icon-full-screen'"></i>
+            {{ isFullscreen ? '退出全屏' : '全屏' }}
+          </el-button>
+        </div>
       </div>
     </div>
 
-    <!-- 礼物动画容器 - 使用固定定位确保在视频上层 -->
+    <!-- 礼物动画容器 -->
     <div class="gift-container" :class="{ 'fullscreen': isFullscreen }">
       <!-- 礼物动画内容 -->
     </div>
@@ -423,11 +458,32 @@ export default {
   object-fit: contain;
 }
 
-.custom-controls {
+/* 隐藏原生全屏按钮 */
+.video-player::-webkit-media-controls-fullscreen-button {
+  display: none !important;
+}
+
+/* 视频控制面板样式 */
+.video-controls {
   position: absolute;
   bottom: 20px;
-  right: 20px;
+  left: 0;
+  right: 0;
+  padding: 10px 20px;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   z-index: 2;
+}
+
+.playlist-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.fullscreen-control {
+  margin-left: auto;
 }
 
 .gift-container {
@@ -436,7 +492,7 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none; /* 允许点击穿透到视频 */
+  pointer-events: none;
   z-index: 3;
 }
 
@@ -456,5 +512,22 @@ export default {
 
 :-ms-fullscreen .gift-container {
   position: absolute;
+}
+
+/* 确保控制面板在全屏时也能显示 */
+:fullscreen .video-controls {
+  position: fixed;
+}
+
+:-webkit-full-screen .video-controls {
+  position: fixed;
+}
+
+:-moz-full-screen .video-controls {
+  position: fixed;
+}
+
+:-ms-fullscreen .video-controls {
+  position: fixed;
 }
 </style> 
