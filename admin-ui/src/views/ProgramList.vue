@@ -18,41 +18,69 @@
         :key="program.id" 
         class="program-card"
         shadow="hover"
-        @click="handleCardClick(program)"
       >
         <!-- 节目信息 -->
         <div class="program-info">
-          <div class="program-name">{{ program.name }}</div>
-          <div class="program-performers">{{ program.performers }}</div>
+          <div class="program-header">
+            <div class="program-name">{{ program.name }}</div>
+            <div class="program-order">#{{ program.order_num }}</div>
+          </div>
+          <div class="program-performers">
+            <i class="el-icon-user-solid"></i>
+            {{ program.performers }}
+          </div>
           <div class="program-stats">
             <div class="stat-item">
-              <i class="el-icon-rocket"></i>
-              <span>{{ program.total_rockets }}</span>
+              <i class="el-icon-present"></i>
+              <span>{{ program.total_rockets }} 个火箭</span>
             </div>
             <div class="stat-item">
               <i class="el-icon-user"></i>
-              <span>{{ program.gifters_count }}</span>
+              <span>{{ program.gifters_count }} 位观众</span>
             </div>
           </div>
         </div>
 
-        <!-- 管理按钮 -->
-        <div v-if="isAdmin" class="admin-actions" @click.stop>
+        <!-- 操作按钮 -->
+        <div class="card-actions">
+          <!-- 普通用户操作 -->
           <el-button 
-            type="text" 
-            size="small"
-            @click="handleEdit(program)"
+            type="primary" 
+            class="gift-btn"
+            @click.stop="handleGift(program)"
           >
-            编辑
+            赠送火箭
           </el-button>
           <el-button 
-            type="text" 
-            size="small" 
-            class="delete-btn"
-            @click="handleDelete(program)"
+            type="info" 
+            plain
+            @click.stop="handleCardClick(program)"
           >
-            删除
+            查看详情
           </el-button>
+
+          <!-- 管理员操作 -->
+          <div v-if="isAdmin" class="admin-actions">
+            <el-divider>管理操作</el-divider>
+            <div class="admin-buttons">
+              <el-button 
+                type="warning" 
+                plain
+                size="small"
+                @click.stop="handleEdit(program)"
+              >
+                编辑节目
+              </el-button>
+              <el-button 
+                type="danger" 
+                plain
+                size="small"
+                @click.stop="handleDelete(program)"
+              >
+                删除节目
+              </el-button>
+            </div>
+          </div>
         </div>
       </el-card>
     </div>
@@ -324,12 +352,15 @@ export default {
 }
 
 .program-card {
-  cursor: pointer;
+  cursor: default;
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .program-card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
 }
 
 .program-info {
@@ -338,52 +369,92 @@ export default {
   gap: 10px;
 }
 
+.program-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.program-order {
+  font-size: 14px;
+  color: #909399;
+  background: #f5f7fa;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
 .program-name {
   font-size: 18px;
   font-weight: bold;
   color: #303133;
+  flex: 1;
+  margin-right: 10px;
 }
 
 .program-performers {
   font-size: 14px;
   color: #606266;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .program-stats {
   display: flex;
-  gap: 20px;
-  margin-top: 10px;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-top: 1px solid #ebeef5;
+  border-bottom: 1px solid #ebeef5;
 }
 
 .stat-item {
   display: flex;
   align-items: center;
   gap: 5px;
-  color: #909399;
+  color: #606266;
 }
 
 .stat-item i {
   font-size: 16px;
+  color: #409EFF;
 }
 
-.admin-actions {
-  margin-top: 15px;
+.card-actions {
+  margin-top: auto;
   padding-top: 15px;
-  border-top: 1px solid #ebeef5;
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
   gap: 10px;
 }
 
-.delete-btn {
-  color: #f56c6c;
+.gift-btn {
+  width: 100%;
+  font-size: 16px;
+  padding: 12px 0;
+}
+
+.admin-actions {
+  margin-top: 10px;
+}
+
+.admin-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.el-divider {
+  margin: 15px 0;
 }
 
 /* 移动端适配 */
 @media screen and (max-width: 768px) {
   .program-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+    padding: 10px;
   }
 
   .program-name {
@@ -391,20 +462,20 @@ export default {
   }
 
   .program-performers {
-    font-size: 12px;
+    font-size: 13px;
   }
 
   .program-stats {
-    font-size: 12px;
+    font-size: 13px;
   }
 
-  .admin-actions {
-    flex-direction: column;
-    align-items: stretch;
+  .gift-btn {
+    font-size: 14px;
+    padding: 10px 0;
   }
 
-  .admin-actions .el-button {
-    margin: 0;
+  .admin-buttons {
+    flex-direction: row;
   }
 }
 </style> 
