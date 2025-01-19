@@ -41,39 +41,38 @@ class Program {
     }
 
     static async findById(id) {
-        const [rows] = await pool.query(`
+        // 1. 先获取节目基本信息
+        const [programRows] = await pool.query(`
             SELECT 
                 p.*,
                 COALESCE(SUM(rg.rockets), 0) as total_rockets,
-                COUNT(DISTINCT rg.user_id) as gifters_count,
-                GROUP_CONCAT(
-                    JSON_OBJECT(
-                        'id', rg.id,
-                        'user_id', rg.user_id,
-                        'rockets', rg.rockets,
-                        'created_at', rg.created_at,
-                        'nickname', u.nickname,
-                        'headimgurl', u.headimgurl
-                    )
-                ) as gifts
+                COUNT(DISTINCT rg.user_id) as gifters_count
             FROM programs p
             LEFT JOIN rocket_gifts rg ON p.id = rg.program_id
-            LEFT JOIN users u ON rg.user_id = u.id
             WHERE p.id = ?
             GROUP BY p.id
         `, [id]);
 
-        if (!rows[0]) return null;
+        if (!programRows[0]) return null;
 
-        // 处理礼物记录
-        const program = rows[0];
-        try {
-            program.gifts = program.gifts ? 
-                program.gifts.split(',').map(gift => JSON.parse(gift)) : 
-                [];
-        } catch (e) {
-            program.gifts = [];
-        }
+        // 2. 单独获取礼物记录
+        const [giftRows] = await pool.query(`
+            SELECT 
+                rg.id,
+                rg.user_id,
+                rg.rockets,
+                rg.created_at,
+                u.nickname,
+                u.headimgurl
+            FROM rocket_gifts rg
+            LEFT JOIN users u ON rg.user_id = u.id
+            WHERE rg.program_id = ?
+            ORDER BY rg.created_at DESC
+        `, [id]);
+
+        // 3. 组合数据
+        const program = programRows[0];
+        program.gifts = giftRows;
 
         return program;
     }
