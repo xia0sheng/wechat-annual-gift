@@ -8,12 +8,29 @@ export default defineConfig(({ command, mode }) => {
     plugins: [vue()],
     base: '/admin/',
     build: {
+      minify: 'esbuild',
+      sourcemap: false,
       assetsDir: 'assets',
       rollupOptions: {
         output: {
-          assetFileNames: 'assets/[name]-[hash][extname]',
-          chunkFileNames: 'assets/[name]-[hash].js',
-          entryFileNames: 'assets/[name]-[hash].js'
+          manualChunks: {
+            'vendor': ['vue', 'vue-router', 'element-plus'],
+            'utils': ['axios', 'vconsole']
+          },
+          assetFileNames: (assetInfo) => {
+            const info = assetInfo.name.split('.')
+            let extType = info[info.length - 1]
+            if (/\.(mp4|webm|ogg|mp3|wav|flac|aac)(\?.*)?$/i.test(assetInfo.name)) {
+              extType = 'media'
+            } else if (/\.(png|jpe?g|gif|svg|ico|webp)(\?.*)?$/i.test(assetInfo.name)) {
+              extType = 'img'
+            } else if (/\.(woff2?|eot|ttf|otf)(\?.*)?$/i.test(assetInfo.name)) {
+              extType = 'fonts'
+            }
+            return `assets/${extType}/[name]-[hash][extname]`
+          },
+          chunkFileNames: 'assets/js/[name]-[hash].js',
+          entryFileNames: 'assets/js/[name]-[hash].js'
         }
       }
     },
