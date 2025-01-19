@@ -3,11 +3,11 @@
     <div class="header">
       <h2>节目列表</h2>
       <el-button 
-        v-if="isAdmin" 
+        v-if="isAdmin"
         type="primary" 
-        @click="$router.push('/programs/new')"
+        @click="handleAdd"
       >
-        添加节目
+        <i class="el-icon-plus"></i> 添加节目
       </el-button>
     </div>
 
@@ -43,44 +43,46 @@
 
         <!-- 操作按钮 -->
         <div class="card-actions">
-          <!-- 普通用户操作 -->
-          <el-button 
-            type="primary" 
-            class="gift-btn"
-            @click.stop="handleGift(program)"
-          >
-            赠送火箭
-          </el-button>
-          <el-button 
-            type="info" 
-            plain
-            @click.stop="handleCardClick(program)"
-          >
-            查看详情
-          </el-button>
+          <!-- 所有用户都能看到的操作 -->
+          <div class="user-actions">
+            <el-button 
+              type="warning" 
+              class="gift-btn"
+              @click.stop="handleGift(program)"
+              :disabled="!userRockets"
+            >
+              <i class="el-icon-present"></i>
+              赠送火箭 {{ userRockets ? `(${userRockets}个可用)` : '(暂无可用)' }}
+            </el-button>
+            <el-button 
+              type="info" 
+              plain
+              @click.stop="handleCardClick(program)"
+            >
+              查看详情
+            </el-button>
+          </div>
 
-          <!-- 管理员操作 -->
-          <div v-if="isAdmin" class="admin-actions">
-            <el-divider>管理操作</el-divider>
-            <div class="admin-buttons">
+          <!-- 管理员才能看到的操作 -->
+          <template v-if="isAdmin">
+            <el-divider content-position="center">管理操作</el-divider>
+            <div class="admin-actions">
               <el-button 
-                type="warning" 
-                plain
+                type="primary"
                 size="small"
                 @click.stop="handleEdit(program)"
               >
-                编辑节目
+                <i class="el-icon-edit"></i> 编辑
               </el-button>
               <el-button 
-                type="danger" 
-                plain
+                type="danger"
                 size="small"
                 @click.stop="handleDelete(program)"
               >
-                删除节目
+                <i class="el-icon-delete"></i> 删除
               </el-button>
             </div>
-          </div>
+          </template>
         </div>
       </el-card>
     </div>
@@ -238,29 +240,50 @@ export default {
       router.push(`/programs/${program.id}`)
     }
 
-    const handleEdit = (program) => {
-      currentId.value = program.id
-      form.value = { ...program }
+    const handleAdd = () => {
+      currentId.value = null
+      form.value = {
+        name: '',
+        performers: '',
+        description: '',
+        order_num: 0
+      }
       dialogVisible.value = true
     }
 
-    const handleDelete = async (program) => {
-      try {
-        await ElMessageBox.confirm('确定要删除该节目吗？', '提示', {
+    const handleEdit = (program) => {
+      currentId.value = program.id
+      form.value = {
+        name: program.name,
+        performers: program.performers,
+        description: program.description,
+        order_num: program.order_num
+      }
+      dialogVisible.value = true
+    }
+
+    const handleDelete = (program) => {
+      ElMessageBox.confirm(
+        `确定要删除节目"${program.name}"吗？`,
+        '警告',
+        {
+          confirmButtonText: '确定删除',
+          cancelButtonText: '取消',
           type: 'warning'
-        })
-        const token = localStorage.getItem('token')
-        await axios.delete(`/programs/${program.id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        ElMessage.success('删除成功')
-        fetchPrograms()
-      } catch (error) {
-        if (error !== 'cancel') {
-          ElMessage.error('删除失败')
+        }
+      ).then(async () => {
+        try {
+          const token = localStorage.getItem('token')
+          await axios.delete(`/programs/${program.id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+          ElMessage.success('删除成功')
+          fetchPrograms()
+        } catch (error) {
+          ElMessage.error(error.response?.data?.message || '删除失败')
           console.error(error)
         }
-      }
+      }).catch(() => {})
     }
 
     const handleSubmit = async () => {
@@ -340,6 +363,7 @@ export default {
       isAdmin,
       userRockets,
       handleCardClick,
+      handleAdd,
       handleEdit,
       handleDelete,
       handleSubmit,
@@ -447,36 +471,34 @@ export default {
   gap: 10px;
 }
 
-.gift-btn {
-  width: 100%;
-  font-size: 16px;
-  padding: 12px 0;
-  background-color: #e6a23c;
-  border-color: #e6a23c;
+.user-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.gift-btn:hover {
+.gift-btn {
+  background-color: #e6a23c;
+  border-color: #e6a23c;
+  color: white;
+}
+
+.gift-btn:hover:not(:disabled) {
   background-color: #ebb563;
   border-color: #ebb563;
 }
 
 .gift-btn:disabled {
+  cursor: not-allowed;
   background-color: #f3d19e;
   border-color: #f3d19e;
 }
 
 .admin-actions {
-  margin-top: 10px;
-}
-
-.admin-buttons {
   display: flex;
-  gap: 10px;
   justify-content: center;
-}
-
-.el-divider {
-  margin: 15px 0;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 /* 移动端适配 */
@@ -499,13 +521,13 @@ export default {
     font-size: 13px;
   }
 
-  .gift-btn {
-    font-size: 14px;
-    padding: 10px 0;
+  .admin-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
   }
 
-  .admin-buttons {
-    flex-direction: row;
+  .admin-actions .el-button {
+    flex: 1;
   }
 }
 
