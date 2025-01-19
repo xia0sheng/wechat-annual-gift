@@ -7,6 +7,16 @@ export default defineConfig(({ command, mode }) => {
   return {
     plugins: [vue()],
     base: '/admin/',
+    build: {
+      assetsDir: 'assets',
+      rollupOptions: {
+        output: {
+          assetFileNames: 'assets/[name]-[hash][extname]',
+          chunkFileNames: 'assets/[name]-[hash].js',
+          entryFileNames: 'assets/[name]-[hash].js'
+        }
+      }
+    },
     server: {
       proxy: {
         '/users': {
