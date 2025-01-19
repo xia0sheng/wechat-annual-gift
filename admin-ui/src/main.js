@@ -9,11 +9,9 @@ import VConsole from 'vconsole'
 // 配置 axios 默认值
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || ''
 
-// 在开发环境中初始化 vConsole
-if (import.meta.env.DEV) {
-  new VConsole({ theme: 'dark' })
-  console.log('[VConsole] 已初始化')
-}
+// 直接初始化 vConsole，不判断环境
+const vConsole = new VConsole()
+console.log('[VConsole] 已初始化')
 
 const app = createApp(App)
 app.use(ElementPlus)
