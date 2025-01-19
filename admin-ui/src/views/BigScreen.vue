@@ -397,8 +397,14 @@ export default {
     },
     toggleFullscreen() {
       const element = this.$refs.screenRef;
+      console.log('[Fullscreen] 当前状态:', {
+        isFullscreen: this.isFullscreen,
+        hasFullscreenElement: !!document.fullscreenElement,
+        element: element
+      });
       
       if (!this.isFullscreen) {
+        console.log('[Fullscreen] 尝试进入全屏');
         if (element.requestFullscreen) {
           element.requestFullscreen();
         } else if (element.webkitRequestFullscreen) {
@@ -407,11 +413,18 @@ export default {
           element.msRequestFullscreen();
         }
       } else {
+        console.log('[Fullscreen] 尝试退出全屏');
         this.exitFullscreen();
       }
     },
     handleFullscreenChange() {
+      const wasFullscreen = this.isFullscreen;
       this.isFullscreen = !!document.fullscreenElement;
+      console.log('[Fullscreen] 状态变化:', {
+        wasFullscreen,
+        isNowFullscreen: this.isFullscreen,
+        fullscreenElement: document.fullscreenElement
+      });
       if (!this.isFullscreen) {
         // 退出全屏时显示控制栏
         this.showControls = true;
@@ -655,21 +668,37 @@ export default {
       return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     },
     handleMouseMove() {
-      if (!this.isFullscreen) return;
+      console.log('[Mouse] 移动事件触发:', {
+        isFullscreen: this.isFullscreen,
+        showControls: this.showControls,
+        lastMoveTime: new Date(this.lastMouseMoveTime).toISOString()
+      });
       
-      // 立即显示控制栏
+      if (!this.isFullscreen) {
+        console.log('[Mouse] 非全屏状态，不处理移动事件');
+        return;
+      }
+      
       this.showControls = true;
       this.lastMouseMoveTime = Date.now();
       
-      // 清除现有定时器
       if (this.controlsTimer) {
+        console.log('[Mouse] 清除现有定时器');
         clearTimeout(this.controlsTimer);
       }
       
-      // 3秒后检查是否还没有鼠标移动
       this.controlsTimer = setTimeout(() => {
         const now = Date.now();
-        if (now - this.lastMouseMoveTime >= 3000) {
+        const timeSinceLastMove = now - this.lastMouseMoveTime;
+        console.log('[Mouse] 检查是否隐藏控制栏:', {
+          currentTime: new Date(now).toISOString(),
+          lastMoveTime: new Date(this.lastMouseMoveTime).toISOString(),
+          timeSinceLastMove,
+          shouldHide: timeSinceLastMove >= 3000
+        });
+        
+        if (timeSinceLastMove >= 3000) {
+          console.log('[Mouse] 隐藏控制栏');
           this.showControls = false;
         }
       }, 3000);
@@ -710,7 +739,7 @@ export default {
   },
   mounted() {
     this._isMount = true;
-    console.log('[BigScreen] Component mounted');
+    console.log('[BigScreen] 组件挂载');
     
     // 添加调试信息
     window._debugBigScreen = this;
@@ -752,6 +781,7 @@ export default {
     if (this.mouseMovingTimer) {
       clearTimeout(this.mouseMovingTimer);
     }
+    console.log('[BigScreen] 事件监听器已移除');
   }
 }
 </script>
