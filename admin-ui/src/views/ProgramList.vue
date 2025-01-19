@@ -1,76 +1,61 @@
 <template>
   <div class="program-list">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>节目列表</span>
-          <el-button
-            v-if="isAdmin"
-            type="primary"
-            @click="handleAdd"
+    <div class="header">
+      <h2>节目列表</h2>
+      <el-button 
+        v-if="isAdmin" 
+        type="primary" 
+        @click="$router.push('/programs/new')"
+      >
+        添加节目
+      </el-button>
+    </div>
+
+    <!-- 网格布局 -->
+    <div class="program-grid">
+      <el-card 
+        v-for="program in programs" 
+        :key="program.id" 
+        class="program-card"
+        shadow="hover"
+        @click="handleCardClick(program)"
+      >
+        <!-- 节目信息 -->
+        <div class="program-info">
+          <div class="program-name">{{ program.name }}</div>
+          <div class="program-performers">{{ program.performers }}</div>
+          <div class="program-stats">
+            <div class="stat-item">
+              <i class="el-icon-rocket"></i>
+              <span>{{ program.total_rockets }}</span>
+            </div>
+            <div class="stat-item">
+              <i class="el-icon-user"></i>
+              <span>{{ program.gifters_count }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 管理按钮 -->
+        <div v-if="isAdmin" class="admin-actions" @click.stop>
+          <el-button 
+            type="text" 
+            size="small"
+            @click="handleEdit(program)"
           >
-            添加节目
+            编辑
+          </el-button>
+          <el-button 
+            type="text" 
+            size="small" 
+            class="delete-btn"
+            @click="handleDelete(program)"
+          >
+            删除
           </el-button>
         </div>
-      </template>
-
-      <el-table 
-        :data="programs" 
-        style="width: 100%" 
-        v-loading="loading"
-        class="responsive-table"
-      >
-        <el-table-column prop="order_num" label="序号" width="80" />
-        <el-table-column prop="name" label="节目名称" />
-        <el-table-column prop="performers" label="表演者" />
-        <el-table-column prop="total_rockets" label="火箭数量" width="100">
-          <template #default="scope">
-            {{ scope.row.total_rockets || 0 }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="gifters_count" label="赠送人数" width="100">
-          <template #default="scope">
-            {{ scope.row.gifters_count || 0 }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" min-width="200">
-          <template #default="scope">
-            <div class="operation-buttons">
-              <el-button
-                type="primary"
-                size="small"
-                @click="handleView(scope.row)"
-              >
-                查看详情
-              </el-button>
-              <el-button
-                type="success"
-                size="small"
-                @click="handleGift(scope.row)"
-              >
-                赠送火箭
-              </el-button>
-              <template v-if="isAdmin">
-                <el-button
-                  type="warning"
-                  size="small"
-                  @click="handleEdit(scope.row)"
-                >
-                  编辑
-                </el-button>
-                <el-button
-                  type="danger"
-                  size="small"
-                  @click="handleDelete(scope.row)"
-                >
-                  删除
-                </el-button>
-              </template>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+      </el-card>
+    </div>
 
     <!-- 编辑/添加对话框 -->
     <el-dialog
@@ -152,24 +137,14 @@ export default {
   setup() {
     const router = useRouter()
     const programs = ref([])
-    const loading = ref(false)
+    const loading = ref(true)
     const dialogVisible = ref(false)
     const giftDialogVisible = ref(false)
     const formRef = ref(null)
     const giftFormRef = ref(null)
     const currentId = ref(null)
     const userRockets = ref(0)
-
-    const isAdmin = computed(() => {
-      const token = localStorage.getItem('token')
-      if (!token) return false
-      try {
-        const decoded = JSON.parse(atob(token.split('.')[1]))
-        return decoded.role === 'admin'
-      } catch (e) {
-        return false
-      }
-    })
+    const isAdmin = ref(false)
 
     const form = ref({
       name: '',
@@ -195,7 +170,6 @@ export default {
     const dialogTitle = computed(() => currentId.value ? '编辑节目' : '添加节目')
 
     const fetchPrograms = async () => {
-      loading.value = true
       try {
         const token = localStorage.getItem('token')
         const response = await axios.get('/programs', {
@@ -222,40 +196,23 @@ export default {
       }
     }
 
-    const handleAdd = () => {
-      currentId.value = null
-      form.value = {
-        name: '',
-        performers: '',
-        description: '',
-        order_num: 0
-      }
+    const handleCardClick = (program) => {
+      router.push(`/programs/${program.id}`)
+    }
+
+    const handleEdit = (program) => {
+      currentId.value = program.id
+      form.value = { ...program }
       dialogVisible.value = true
     }
 
-    const handleEdit = (row) => {
-      currentId.value = row.id
-      form.value = { ...row }
-      dialogVisible.value = true
-    }
-
-    const handleView = (row) => {
-      router.push(`/programs/${row.id}`)
-    }
-
-    const handleGift = (row) => {
-      currentId.value = row.id
-      giftForm.value = { rockets: 1 }
-      giftDialogVisible.value = true
-    }
-
-    const handleDelete = async (row) => {
+    const handleDelete = async (program) => {
       try {
         await ElMessageBox.confirm('确定要删除该节目吗？', '提示', {
           type: 'warning'
         })
         const token = localStorage.getItem('token')
-        await axios.delete(`/programs/${row.id}`, {
+        await axios.delete(`/programs/${program.id}`, {
           headers: { Authorization: `Bearer ${token}` }
         })
         ElMessage.success('删除成功')
@@ -318,6 +275,9 @@ export default {
     onMounted(() => {
       fetchPrograms()
       fetchUserInfo()
+      // 检查是否是管理员
+      const userRole = localStorage.getItem('userRole')
+      isAdmin.value = userRole === 'admin'
     })
 
     return {
@@ -334,10 +294,8 @@ export default {
       dialogTitle,
       isAdmin,
       userRockets,
-      handleAdd,
+      handleCardClick,
       handleEdit,
-      handleView,
-      handleGift,
       handleDelete,
       handleSubmit,
       handleGiftSubmit
@@ -351,56 +309,102 @@ export default {
   padding: 20px;
 }
 
-.card-header {
+.header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 20px;
 }
 
-.rockets-info {
-  text-align: center;
-  color: #666;
+.program-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  padding: 10px;
+}
+
+.program-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.program-card:hover {
+  transform: translateY(-5px);
+}
+
+.program-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.program-name {
+  font-size: 18px;
+  font-weight: bold;
+  color: #303133;
+}
+
+.program-performers {
+  font-size: 14px;
+  color: #606266;
+}
+
+.program-stats {
+  display: flex;
+  gap: 20px;
   margin-top: 10px;
 }
 
-/* 响应式表格样式 */
-@media (max-width: 768px) {
-  .responsive-table {
-    :deep(.el-table__header-wrapper) {
-      display: none;
-    }
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #909399;
+}
 
-    :deep(.el-table__body-wrapper) {
-      td {
-        display: block;
-        width: 100%;
-        border: none;
-        padding: 5px 10px;
+.stat-item i {
+  font-size: 16px;
+}
 
-        &::before {
-          content: attr(data-label);
-          font-weight: bold;
-          display: inline-block;
-          width: 100px;
-        }
-      }
+.admin-actions {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #ebeef5;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
 
-      tr {
-        display: block;
-        border-bottom: 1px solid #EBEEF5;
-        padding: 10px 0;
-      }
-    }
+.delete-btn {
+  color: #f56c6c;
+}
+
+/* 移动端适配 */
+@media screen and (max-width: 768px) {
+  .program-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
   }
 
-  .operation-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
+  .program-name {
+    font-size: 16px;
+  }
 
-    .el-button {
-      margin: 0;
-    }
+  .program-performers {
+    font-size: 12px;
+  }
+
+  .program-stats {
+    font-size: 12px;
+  }
+
+  .admin-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-actions .el-button {
+    margin: 0;
   }
 }
 </style> 
