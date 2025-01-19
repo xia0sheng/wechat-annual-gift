@@ -397,69 +397,45 @@ export default {
     },
     toggleFullscreen() {
       const element = this.$refs.screenRef;
-      console.log('[Fullscreen] 尝试切换全屏，详细信息:', {
-        isFullscreen: this.isFullscreen,
-        element: element,
-        elementId: element?.id,
-        elementClassName: element?.className,
-        elementTagName: element?.tagName,
-        elementRect: element?.getBoundingClientRect(),
-        // 检查所有可能的全屏 API
-        hasFullscreenAPI: {
-          requestFullscreen: !!element?.requestFullscreen,
-          webkitRequestFullscreen: !!element?.webkitRequestFullscreen,
-          mozRequestFullScreen: !!element?.mozRequestFullScreen,
-          msRequestFullscreen: !!element?.msRequestFullscreen
+      console.log('[Fullscreen] 尝试切换全屏:', {
+        element: element?.tagName,
+        apis: {
+          standard: !!element?.requestFullscreen,
+          webkit: !!element?.webkitRequestFullscreen,
+          moz: !!element?.mozRequestFullScreen,
+          ms: !!element?.msRequestFullscreen
         },
-        // 检查当前全屏状态
-        currentFullscreenElement: {
-          standard: document.fullscreenElement,
-          webkit: document.webkitFullscreenElement,
-          moz: document.mozFullScreenElement,
-          ms: document.msFullscreenElement
-        },
-        // 检查浏览器环境
-        userAgent: navigator.userAgent,
-        isWechat: /MicroMessenger/i.test(navigator.userAgent)
+        browser: navigator.userAgent
       });
 
       if (!this.isFullscreen) {
         try {
-          console.log('[Fullscreen] 准备进入全屏');
           if (element.requestFullscreen) {
-            console.log('[Fullscreen] 使用标准全屏 API');
             element.requestFullscreen().then(() => {
-              console.log('[Fullscreen] 标准全屏 API 调用成功');
+              console.log('[Fullscreen] 进入全屏成功');
             }).catch(err => {
-              console.error('[Fullscreen] 标准全屏 API 调用失败:', err);
+              console.error('[Fullscreen] 进入全屏失败:', err.message);
             });
           } else if (element.webkitRequestFullscreen) {
-            console.log('[Fullscreen] 使用 Webkit 全屏 API');
             element.webkitRequestFullscreen();
+            console.log('[Fullscreen] 使用 Webkit 全屏');
           } else if (element.mozRequestFullScreen) {
-            console.log('[Fullscreen] 使用 Mozilla 全屏 API');
             element.mozRequestFullScreen();
+            console.log('[Fullscreen] 使用 Mozilla 全屏');
           } else if (element.msRequestFullscreen) {
-            console.log('[Fullscreen] 使用 MS 全屏 API');
             element.msRequestFullscreen();
-          } else {
-            console.error('[Fullscreen] 没有可用的全屏 API');
+            console.log('[Fullscreen] 使用 IE 全屏');
           }
         } catch (err) {
-          console.error('[Fullscreen] 进入全屏时发生错误:', {
-            error: err,
-            message: err.message,
-            stack: err.stack
-          });
+          console.error('[Fullscreen] 错误:', err.message);
         }
       } else {
-        console.log('[Fullscreen] 准备退出全屏');
         this.exitFullscreen();
+        console.log('[Fullscreen] 退出全屏');
       }
     },
     handleFullscreenChange() {
       const wasFullscreen = this.isFullscreen;
-      // 检查所有可能的全屏元素
       this.isFullscreen = !!(
         document.fullscreenElement ||
         document.webkitFullscreenElement ||
@@ -468,21 +444,9 @@ export default {
       );
       
       console.log('[Fullscreen] 状态变化:', {
-        wasFullscreen,
-        isNowFullscreen: this.isFullscreen,
-        fullscreenElement: document.fullscreenElement,
-        webkitFullscreenElement: document.webkitFullscreenElement,
-        mozFullScreenElement: document.mozFullScreenElement,
-        msFullscreenElement: document.msFullscreenElement
+        从: wasFullscreen,
+        到: this.isFullscreen
       });
-
-      if (!this.isFullscreen) {
-        this.showControls = true;
-        if (this.controlsTimer) {
-          clearTimeout(this.controlsTimer);
-          this.controlsTimer = null;
-        }
-      }
     },
     addEventListeners() {
       document.addEventListener('fullscreenchange', this.handleFullscreenChange);
@@ -718,37 +682,19 @@ export default {
       return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     },
     handleMouseMove() {
-      console.log('[Mouse] 移动事件触发:', {
-        isFullscreen: this.isFullscreen,
-        showControls: this.showControls,
-        lastMoveTime: new Date(this.lastMouseMoveTime).toISOString()
-      });
-      
-      if (!this.isFullscreen) {
-        console.log('[Mouse] 非全屏状态，不处理移动事件');
-        return;
-      }
+      if (!this.isFullscreen) return;
       
       this.showControls = true;
       this.lastMouseMoveTime = Date.now();
       
       if (this.controlsTimer) {
-        console.log('[Mouse] 清除现有定时器');
         clearTimeout(this.controlsTimer);
       }
       
       this.controlsTimer = setTimeout(() => {
         const now = Date.now();
         const timeSinceLastMove = now - this.lastMouseMoveTime;
-        console.log('[Mouse] 检查是否隐藏控制栏:', {
-          currentTime: new Date(now).toISOString(),
-          lastMoveTime: new Date(this.lastMouseMoveTime).toISOString(),
-          timeSinceLastMove,
-          shouldHide: timeSinceLastMove >= 3000
-        });
-        
         if (timeSinceLastMove >= 3000) {
-          console.log('[Mouse] 隐藏控制栏');
           this.showControls = false;
         }
       }, 3000);
