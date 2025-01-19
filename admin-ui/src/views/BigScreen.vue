@@ -397,36 +397,49 @@ export default {
     },
     toggleFullscreen() {
       const element = this.$refs.screenRef;
-      console.log('[Fullscreen] 当前状态:', {
+      console.log('[Fullscreen] 尝试切换全屏，当前状态:', {
         isFullscreen: this.isFullscreen,
-        hasFullscreenElement: !!document.fullscreenElement,
-        element: element
+        element: element,
+        hasRequestFullscreen: !!element.requestFullscreen,
+        hasWebkitRequestFullscreen: !!element.webkitRequestFullscreen,
+        hasMozRequestFullScreen: !!element.mozRequestFullScreen,
+        hasMsRequestFullscreen: !!element.msRequestFullscreen
       });
       
       if (!this.isFullscreen) {
-        console.log('[Fullscreen] 尝试进入全屏');
         if (element.requestFullscreen) {
           element.requestFullscreen();
         } else if (element.webkitRequestFullscreen) {
           element.webkitRequestFullscreen();
+        } else if (element.mozRequestFullScreen) {
+          element.mozRequestFullScreen();
         } else if (element.msRequestFullscreen) {
           element.msRequestFullscreen();
         }
       } else {
-        console.log('[Fullscreen] 尝试退出全屏');
         this.exitFullscreen();
       }
     },
     handleFullscreenChange() {
       const wasFullscreen = this.isFullscreen;
-      this.isFullscreen = !!document.fullscreenElement;
+      // 检查所有可能的全屏元素
+      this.isFullscreen = !!(
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement
+      );
+      
       console.log('[Fullscreen] 状态变化:', {
         wasFullscreen,
         isNowFullscreen: this.isFullscreen,
-        fullscreenElement: document.fullscreenElement
+        fullscreenElement: document.fullscreenElement,
+        webkitFullscreenElement: document.webkitFullscreenElement,
+        mozFullScreenElement: document.mozFullScreenElement,
+        msFullscreenElement: document.msFullscreenElement
       });
+
       if (!this.isFullscreen) {
-        // 退出全屏时显示控制栏
         this.showControls = true;
         if (this.controlsTimer) {
           clearTimeout(this.controlsTimer);
