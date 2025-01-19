@@ -2,13 +2,20 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const { authMiddleware, adminMiddleware } = require('./wechat-auth');
-const pool = require('../database/pool');
+const { pool } = require('../config/database');
 
-// 获取当前用户信息 - 需要放在具体路由之前
+// 获取当前用户信息
 router.get('/me', authMiddleware, async (req, res) => {
     try {
         const [[user]] = await pool.query(`
-            SELECT id, nickname, headimgurl, rockets, role, real_name
+            SELECT 
+                id,
+                nickname,
+                headimgurl,
+                rockets,
+                role,
+                real_name,
+                openid
             FROM users
             WHERE id = ?
         `, [req.user.id]);
@@ -20,9 +27,13 @@ router.get('/me', authMiddleware, async (req, res) => {
             });
         }
 
+        // 确保返回用户角色信息
         res.json({
             success: true,
-            data: user
+            data: {
+                ...user,
+                role: user.role || 'user'  // 确保有默认角色
+            }
         });
     } catch (error) {
         console.error('获取用户信息失败:', error);

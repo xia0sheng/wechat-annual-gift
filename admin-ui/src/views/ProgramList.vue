@@ -227,14 +227,23 @@ export default {
     const fetchUserInfo = async () => {
       try {
         const token = localStorage.getItem('token')
+        console.log('Token:', token); // 调试用
+
         const response = await axios.get('/users/me', {
           headers: { Authorization: `Bearer ${token}` }
         })
+        console.log('User info response:', response.data); // 调试用
+
         userRockets.value = response.data.data.rockets || 0
         isAdmin.value = response.data.data.role === 'admin'
+        console.log('Is admin:', isAdmin.value); // 调试用
+        
         localStorage.setItem('userRole', response.data.data.role)
       } catch (error) {
-        console.error(error)
+        console.error('Fetch user info error:', error)
+        if (error.response) {
+          console.error('Error response:', error.response.data)
+        }
       }
     }
 
