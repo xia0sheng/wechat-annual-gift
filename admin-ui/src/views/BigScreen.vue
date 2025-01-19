@@ -402,6 +402,8 @@ export default {
         element: element,
         elementId: element?.id,
         elementClassName: element?.className,
+        elementTagName: element?.tagName,
+        elementRect: element?.getBoundingClientRect(),
         // 检查所有可能的全屏 API
         hasFullscreenAPI: {
           requestFullscreen: !!element?.requestFullscreen,
@@ -415,33 +417,43 @@ export default {
           webkit: document.webkitFullscreenElement,
           moz: document.mozFullScreenElement,
           ms: document.msFullscreenElement
-        }
+        },
+        // 检查浏览器环境
+        userAgent: navigator.userAgent,
+        isWechat: /MicroMessenger/i.test(navigator.userAgent)
       });
 
       if (!this.isFullscreen) {
         try {
+          console.log('[Fullscreen] 准备进入全屏');
           if (element.requestFullscreen) {
+            console.log('[Fullscreen] 使用标准全屏 API');
             element.requestFullscreen().then(() => {
               console.log('[Fullscreen] 标准全屏 API 调用成功');
             }).catch(err => {
               console.error('[Fullscreen] 标准全屏 API 调用失败:', err);
             });
           } else if (element.webkitRequestFullscreen) {
+            console.log('[Fullscreen] 使用 Webkit 全屏 API');
             element.webkitRequestFullscreen();
-            console.log('[Fullscreen] Webkit 全屏 API 调用');
           } else if (element.mozRequestFullScreen) {
+            console.log('[Fullscreen] 使用 Mozilla 全屏 API');
             element.mozRequestFullScreen();
-            console.log('[Fullscreen] Mozilla 全屏 API 调用');
           } else if (element.msRequestFullscreen) {
+            console.log('[Fullscreen] 使用 MS 全屏 API');
             element.msRequestFullscreen();
-            console.log('[Fullscreen] MS 全屏 API 调用');
           } else {
             console.error('[Fullscreen] 没有可用的全屏 API');
           }
         } catch (err) {
-          console.error('[Fullscreen] 进入全屏时发生错误:', err);
+          console.error('[Fullscreen] 进入全屏时发生错误:', {
+            error: err,
+            message: err.message,
+            stack: err.stack
+          });
         }
       } else {
+        console.log('[Fullscreen] 准备退出全屏');
         this.exitFullscreen();
       }
     },
