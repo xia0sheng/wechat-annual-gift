@@ -137,9 +137,9 @@ export default {
         console.log('Fetching program with ID:', route.params.id)
         const response = await axios.get(`/programs/${route.params.id}`, {
           headers: {
-            Authorization: `Bearer ${token}`,
-            params: { with_gifts: true }
-          }
+            Authorization: `Bearer ${token}`
+          },
+          params: { with_gifts: true }
         })
         console.log('Program response:', response.data)
         if (!response.data.success) {
