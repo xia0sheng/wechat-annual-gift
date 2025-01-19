@@ -261,7 +261,16 @@ export default {
   },
   computed: {
     currentVideo() {
-      return this.currentVideoIndex >= 0 ? URL.createObjectURL(this.playlist[this.currentVideoIndex].file) : ''
+      if (this.currentVideoIndex >= 0 && this.playlist[this.currentVideoIndex]) {
+        const file = this.playlist[this.currentVideoIndex].file;
+        console.log('[Video URL]', {
+          index: this.currentVideoIndex,
+          fileName: file.name,
+          url: URL.createObjectURL(file)
+        });
+        return URL.createObjectURL(file);
+      }
+      return '';
     },
     hasNext() {
       return this.currentVideoIndex < this.playlist.length - 1
