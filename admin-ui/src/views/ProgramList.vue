@@ -127,6 +127,7 @@
       title="赠送火箭"
       v-model="giftDialogVisible"
       width="400px"
+      :close-on-click-modal="false"
     >
       <el-form
         :model="giftForm"
@@ -134,6 +135,9 @@
         :rules="giftRules"
         ref="giftFormRef"
       >
+        <el-form-item label="节目名称">
+          <span>{{ programs.find(p => p.id === currentId)?.name }}</span>
+        </el-form-item>
         <el-form-item label="火箭数量" prop="rockets">
           <el-input-number
             v-model="giftForm.rockets"
@@ -148,7 +152,13 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="giftDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleGiftSubmit">确定</el-button>
+          <el-button 
+            type="primary" 
+            @click="handleGiftSubmit"
+            :disabled="!userRockets"
+          >
+            确定赠送
+          </el-button>
         </span>
       </template>
     </el-dialog>
@@ -300,6 +310,13 @@ export default {
       })
     }
 
+    // 处理赠送火箭
+    const handleGift = (program) => {
+      currentId.value = program.id
+      giftForm.value = { rockets: 1 }
+      giftDialogVisible.value = true
+    }
+
     onMounted(() => {
       fetchPrograms()
       fetchUserInfo()
@@ -326,7 +343,8 @@ export default {
       handleEdit,
       handleDelete,
       handleSubmit,
-      handleGiftSubmit
+      handleGiftSubmit,
+      handleGift
     }
   }
 }
@@ -433,6 +451,18 @@ export default {
   width: 100%;
   font-size: 16px;
   padding: 12px 0;
+  background-color: #e6a23c;
+  border-color: #e6a23c;
+}
+
+.gift-btn:hover {
+  background-color: #ebb563;
+  border-color: #ebb563;
+}
+
+.gift-btn:disabled {
+  background-color: #f3d19e;
+  border-color: #f3d19e;
 }
 
 .admin-actions {
@@ -477,5 +507,14 @@ export default {
   .admin-buttons {
     flex-direction: row;
   }
+}
+
+.rockets-info {
+  text-align: center;
+  color: #666;
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
 }
 </style> 
