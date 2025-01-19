@@ -117,7 +117,7 @@ export default {
     const route = useRoute()
     const router = useRouter()
     const program = ref(null)
-    const loading = ref(false)
+    const loading = ref(true)
     const giftDialogVisible = ref(false)
     const giftFormRef = ref(null)
     const userRockets = ref(0)
@@ -137,7 +137,8 @@ export default {
         console.log('Fetching program with ID:', route.params.id)
         const response = await axios.get(`/programs/${route.params.id}`, {
           headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
+            params: { with_gifts: true }
           }
         })
         console.log('Program response:', response.data)
