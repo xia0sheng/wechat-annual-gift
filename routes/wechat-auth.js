@@ -96,6 +96,15 @@ async function handleCallback(code, res) {
         log('重定向到管理界面:', redirectUrl);
         res.redirect(redirectUrl);
 
+        res.json({
+            success: true,
+            data: {
+                token,
+                userRole: user.role,
+                // ... 其他用户信息
+            }
+        });
+
     } catch (error) {
         log('授权回调处理失败:', error);
         log('错误详情:', error.response?.data || error.message);

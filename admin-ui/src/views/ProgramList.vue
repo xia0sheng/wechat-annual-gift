@@ -231,6 +231,8 @@ export default {
           headers: { Authorization: `Bearer ${token}` }
         })
         userRockets.value = response.data.data.rockets || 0
+        isAdmin.value = response.data.data.role === 'admin'
+        localStorage.setItem('userRole', response.data.data.role)
       } catch (error) {
         console.error(error)
       }
@@ -343,9 +345,6 @@ export default {
     onMounted(() => {
       fetchPrograms()
       fetchUserInfo()
-      // 检查是否是管理员
-      const userRole = localStorage.getItem('userRole')
-      isAdmin.value = userRole === 'admin'
     })
 
     return {

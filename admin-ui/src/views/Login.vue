@@ -35,6 +35,8 @@ export default {
       loading.value = true
       localStorage.removeItem('token')
       window.location.replace('https://wx.thunis.com/wechat/auth')
+      // 登录成功后保存用户角色
+      localStorage.setItem('userRole', response.data.data.userRole)
     }
 
     return {

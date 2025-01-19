@@ -2,17 +2,24 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const { authMiddleware, adminMiddleware } = require('./wechat-auth');
+const pool = require('../database/pool');
 
 // 获取当前用户信息 - 需要放在具体路由之前
 router.get('/me', authMiddleware, async (req, res) => {
     try {
-        const user = await User.findById(req.user.id);
+        const [[user]] = await pool.query(`
+            SELECT id, nickname, headimgurl, rockets, role, real_name
+            FROM users
+            WHERE id = ?
+        `, [req.user.id]);
+
         if (!user) {
             return res.status(404).json({
                 success: false,
                 message: '用户不存在'
             });
         }
+
         res.json({
             success: true,
             data: user
@@ -21,8 +28,7 @@ router.get('/me', authMiddleware, async (req, res) => {
         console.error('获取用户信息失败:', error);
         res.status(500).json({
             success: false,
-            message: '获取用户信息失败',
-            error: error.message
+            message: '获取用户信息失败'
         });
     }
 });
