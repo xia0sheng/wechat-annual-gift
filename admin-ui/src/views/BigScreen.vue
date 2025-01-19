@@ -397,24 +397,49 @@ export default {
     },
     toggleFullscreen() {
       const element = this.$refs.screenRef;
-      console.log('[Fullscreen] 尝试切换全屏，当前状态:', {
+      console.log('[Fullscreen] 尝试切换全屏，详细信息:', {
         isFullscreen: this.isFullscreen,
         element: element,
-        hasRequestFullscreen: !!element.requestFullscreen,
-        hasWebkitRequestFullscreen: !!element.webkitRequestFullscreen,
-        hasMozRequestFullScreen: !!element.mozRequestFullScreen,
-        hasMsRequestFullscreen: !!element.msRequestFullscreen
+        elementId: element?.id,
+        elementClassName: element?.className,
+        // 检查所有可能的全屏 API
+        hasFullscreenAPI: {
+          requestFullscreen: !!element?.requestFullscreen,
+          webkitRequestFullscreen: !!element?.webkitRequestFullscreen,
+          mozRequestFullScreen: !!element?.mozRequestFullScreen,
+          msRequestFullscreen: !!element?.msRequestFullscreen
+        },
+        // 检查当前全屏状态
+        currentFullscreenElement: {
+          standard: document.fullscreenElement,
+          webkit: document.webkitFullscreenElement,
+          moz: document.mozFullScreenElement,
+          ms: document.msFullscreenElement
+        }
       });
-      
+
       if (!this.isFullscreen) {
-        if (element.requestFullscreen) {
-          element.requestFullscreen();
-        } else if (element.webkitRequestFullscreen) {
-          element.webkitRequestFullscreen();
-        } else if (element.mozRequestFullScreen) {
-          element.mozRequestFullScreen();
-        } else if (element.msRequestFullscreen) {
-          element.msRequestFullscreen();
+        try {
+          if (element.requestFullscreen) {
+            element.requestFullscreen().then(() => {
+              console.log('[Fullscreen] 标准全屏 API 调用成功');
+            }).catch(err => {
+              console.error('[Fullscreen] 标准全屏 API 调用失败:', err);
+            });
+          } else if (element.webkitRequestFullscreen) {
+            element.webkitRequestFullscreen();
+            console.log('[Fullscreen] Webkit 全屏 API 调用');
+          } else if (element.mozRequestFullScreen) {
+            element.mozRequestFullScreen();
+            console.log('[Fullscreen] Mozilla 全屏 API 调用');
+          } else if (element.msRequestFullscreen) {
+            element.msRequestFullscreen();
+            console.log('[Fullscreen] MS 全屏 API 调用');
+          } else {
+            console.error('[Fullscreen] 没有可用的全屏 API');
+          }
+        } catch (err) {
+          console.error('[Fullscreen] 进入全屏时发生错误:', err);
         }
       } else {
         this.exitFullscreen();
