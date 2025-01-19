@@ -27,8 +27,9 @@
             class="video-controls-wrapper"
             :class="{ 'controls-hidden': isFullscreen && !showControls }"
             @mousemove="handleControlsMouseMove"
+            @mouseleave="handleControlsMouseLeave"
           >
-            <!-- 进度条 -->
+            <!-- 进度条容器 -->
             <div class="progress-container">
               <div class="progress-bar">
                 <el-slider
@@ -683,24 +684,36 @@ export default {
       return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     },
     handleControlsMouseMove() {
-      // 只在全屏模式下处理鼠标移动
       if (!this.isFullscreen) return;
       
       console.log('[Controls] 显示控制栏');
       this.showControls = true;
       
-      // 清除现有定时器
       if (this.controlsTimer) {
         clearTimeout(this.controlsTimer);
       }
       
-      // 设置新的定时器
       this.controlsTimer = setTimeout(() => {
         if (this.isFullscreen) {
-          console.log('[Controls] 隐藏控制栏');
+          console.log('[Controls] 准备隐藏控制栏');
           this.showControls = false;
         }
       }, 3000);
+    },
+    handleControlsMouseLeave() {
+      if (!this.isFullscreen) return;
+      
+      console.log('[Controls] 鼠标离开，准备隐藏控制栏');
+      if (this.controlsTimer) {
+        clearTimeout(this.controlsTimer);
+      }
+      
+      this.controlsTimer = setTimeout(() => {
+        if (this.isFullscreen) {
+          console.log('[Controls] 鼠标离开，隐藏控制栏');
+          this.showControls = false;
+        }
+      }, 1000);
     },
     handleDrawerClose() {
       this.showPlaylist = false;
@@ -951,6 +964,7 @@ export default {
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
   transition: opacity 0.3s ease;
   opacity: 1;
+  padding-bottom: 20px; /* 增加底部内边距 */
 }
 
 .controls-hidden {
@@ -961,7 +975,10 @@ export default {
 /* 确保全屏时控制栏正确显示 */
 :fullscreen .video-controls-wrapper {
   position: fixed;
-  padding-bottom: 40px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
 }
 
 .video-container {
@@ -1307,11 +1324,9 @@ export default {
 }
 
 .progress-container {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -10px;
-  padding: 10px 20px;
+  position: relative; /* 改为相对定位 */
+  padding: 20px 20px 10px 20px; /* 调整内边距 */
+  margin-bottom: 10px; /* 增加与控制按钮的间距 */
 }
 
 .control-item {
@@ -1420,10 +1435,10 @@ export default {
 }
 
 .controls-panel {
+  padding: 0 20px 10px 20px; /* 调整控制面板内边距 */
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px;
 }
 
 .right-controls {
@@ -1442,5 +1457,34 @@ export default {
 .icon-fullscreen:before,
 .icon-exitfullscreen:before {
   display: none;
+}
+
+/* 进度条样式优化 */
+.progress-bar {
+  width: 100%;
+  padding: 5px 0;
+}
+
+/* 调整 el-slider 的样式 */
+:deep(.el-slider) {
+  margin: 0;
+}
+
+:deep(.el-slider__runway) {
+  margin: 0;
+  height: 4px;
+}
+
+:deep(.el-slider__bar) {
+  height: 4px;
+}
+
+:deep(.el-slider__button-wrapper) {
+  top: -14px;
+}
+
+:deep(.el-slider__button) {
+  width: 12px;
+  height: 12px;
 }
 </style> 
