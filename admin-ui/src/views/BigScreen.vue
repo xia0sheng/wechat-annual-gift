@@ -25,7 +25,8 @@
           <!-- 控制栏 -->
           <div 
             class="video-controls-wrapper"
-            :class="{ 'controls-hidden': !showControls && isFullscreen }"
+            :class="{ 'controls-hidden': isFullscreen && !showControls }"
+            @mousemove="handleControlsMouseMove"
           >
             <!-- 进度条 -->
             <div class="progress-container">
@@ -681,20 +682,22 @@ export default {
       const secs = Math.floor(seconds % 60);
       return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     },
-    handleMouseMove() {
+    handleControlsMouseMove() {
+      // 只在全屏模式下处理鼠标移动
       if (!this.isFullscreen) return;
       
+      console.log('[Controls] 显示控制栏');
       this.showControls = true;
-      this.lastMouseMoveTime = Date.now();
       
+      // 清除现有定时器
       if (this.controlsTimer) {
         clearTimeout(this.controlsTimer);
       }
       
+      // 设置新的定时器
       this.controlsTimer = setTimeout(() => {
-        const now = Date.now();
-        const timeSinceLastMove = now - this.lastMouseMoveTime;
-        if (timeSinceLastMove >= 3000) {
+        if (this.isFullscreen) {
+          console.log('[Controls] 隐藏控制栏');
           this.showControls = false;
         }
       }, 3000);
@@ -751,7 +754,6 @@ export default {
     
     // 添加页面可见性监听
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
-    document.addEventListener('mousemove', this.handleMouseMove);
   },
   beforeUnmount() {
     this._isMount = false;
@@ -770,7 +772,6 @@ export default {
     }
     this._animationQueue = [];
     this._animationInProgress = false;
-    document.removeEventListener('mousemove', this.handleMouseMove);
     if (this.controlsTimer) {
       clearTimeout(this.controlsTimer);
     }
@@ -947,17 +948,13 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7) 40%, rgba(0, 0, 0, 0.9));
-  transition: all 0.3s ease;
-  z-index: 100;
-  padding: 20px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  transition: opacity 0.3s ease;
   opacity: 1;
-  transform: translateY(0);
 }
 
 .controls-hidden {
   opacity: 0;
-  transform: translateY(100%);
   pointer-events: none;
 }
 
@@ -1299,17 +1296,13 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7) 40%, rgba(0, 0, 0, 0.9));
-  transition: all 0.3s ease;
-  z-index: 100;
-  padding: 20px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  transition: opacity 0.3s ease;
   opacity: 1;
-  transform: translateY(0);
 }
 
 .controls-hidden {
   opacity: 0;
-  transform: translateY(100%);
   pointer-events: none;
 }
 
@@ -1421,12 +1414,9 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7) 40%, rgba(0, 0, 0, 0.9));
-  transition: all 0.3s ease;
-  z-index: 100;
-  padding: 20px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  transition: opacity 0.3s ease;
   opacity: 1;
-  transform: translateY(0);
 }
 
 .controls-panel {
