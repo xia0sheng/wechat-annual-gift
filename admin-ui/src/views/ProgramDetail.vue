@@ -58,7 +58,7 @@
               <template #default="scope">
                 <div class="user-info">
                   <el-avatar :size="30" :src="scope.row.headimgurl" />
-                  <span>{{ scope.row.nickname }}</span>
+                  <span>{{ scope.row.real_name || scope.row.nickname }}</span>
                 </div>
               </template>
             </el-table-column>
@@ -69,6 +69,18 @@
               </template>
             </el-table-column>
           </el-table>
+          
+          <!-- 分页控件 -->
+          <div class="pagination-container">
+            <el-pagination
+              v-if="program.gifts_pagination"
+              :current-page="currentPage"
+              :page-size="pageSize"
+              :total="program.gifts_pagination.total"
+              layout="total, prev, pager, next"
+              @current-change="handlePageChange"
+            />
+          </div>
         </div>
       </div>
     </el-card>
@@ -121,6 +133,8 @@ export default {
     const giftDialogVisible = ref(false)
     const giftFormRef = ref(null)
     const userRockets = ref(0)
+    const currentPage = ref(1)
+    const pageSize = ref(10)
 
     const giftForm = ref({
       rockets: 1
@@ -139,7 +153,10 @@ export default {
           headers: {
             Authorization: `Bearer ${token}`
           },
-          params: { with_gifts: true }
+          params: {
+            page: currentPage.value,
+            page_size: pageSize.value
+          }
         })
         console.log('Program response:', response.data)
         if (!response.data.success) {
@@ -172,8 +189,11 @@ export default {
             rockets: parseInt(gift.rockets) || 0,
             created_at: gift.created_at,
             nickname: gift.nickname || '',
-            headimgurl: gift.headimgurl || ''
-          }))
+            headimgurl: gift.headimgurl || '',
+            real_name: gift.real_name || '',
+            gifts_pagination: rawData.gifts_pagination || {}
+          })),
+          gifts_pagination: rawData.gifts_pagination || {}
         }
         console.log('Processed program data:', program.value)
       } catch (error) {
@@ -239,6 +259,11 @@ export default {
       }
     }
 
+    const handlePageChange = (page) => {
+      currentPage.value = page
+      fetchProgram()
+    }
+
     onMounted(() => {
       fetchProgram()
       fetchUserInfo()
@@ -252,9 +277,12 @@ export default {
       giftFormRef,
       giftRules,
       userRockets,
+      currentPage,
+      pageSize,
       handleGift,
       handleGiftSubmit,
-      formatDate
+      formatDate,
+      handlePageChange
     }
   }
 }
@@ -320,5 +348,11 @@ export default {
   text-align: center;
   color: #666;
   margin-top: 10px;
+}
+
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
 }
 </style> 

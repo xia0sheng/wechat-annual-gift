@@ -27,18 +27,19 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         console.log('Fetching program with ID:', req.params.id);
-        const program = await Program.findById(req.params.id);
+        const page = parseInt(req.query.page) || 1;
+        const pageSize = parseInt(req.query.page_size) || 10;
+        
+        const program = await Program.findById(req.params.id, page, pageSize);
         console.log('Found program:', program);
+        
         if (!program) {
             return res.status(404).json({
                 success: false,
                 message: '节目不存在'
             });
         }
-        console.log('Sending response:', JSON.stringify({
-            success: true,
-            data: program
-        }, null, 2));
+        
         res.json({
             success: true,
             data: program

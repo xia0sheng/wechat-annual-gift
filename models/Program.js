@@ -40,7 +40,7 @@ class Program {
         }));
     }
 
-    static async findById(id) {
+    static async findById(id, page = 1, pageSize = 10) {
         // 1. 先获取节目基本信息
         const [programRows] = await pool.query(`
             SELECT 
@@ -55,7 +55,14 @@ class Program {
 
         if (!programRows[0]) return null;
 
-        // 2. 单独获取礼物记录
+        // 2. 获取礼物记录总数
+        const [[{ total }]] = await pool.query(`
+            SELECT COUNT(*) as total
+            FROM rocket_gifts rg
+            WHERE rg.program_id = ?
+        `, [id]);
+
+        // 3. 分页获取礼物记录
         const [giftRows] = await pool.query(`
             SELECT 
                 rg.id,
@@ -63,16 +70,24 @@ class Program {
                 rg.rockets,
                 rg.created_at,
                 u.nickname,
-                u.headimgurl
+                u.headimgurl,
+                u.real_name
             FROM rocket_gifts rg
             LEFT JOIN users u ON rg.user_id = u.id
             WHERE rg.program_id = ?
             ORDER BY rg.created_at DESC
-        `, [id]);
+            LIMIT ? OFFSET ?
+        `, [id, pageSize, (page - 1) * pageSize]);
 
-        // 3. 组合数据
+        // 4. 组合数据
         const program = programRows[0];
         program.gifts = giftRows;
+        program.gifts_pagination = {
+            total,
+            current_page: page,
+            page_size: pageSize,
+            total_pages: Math.ceil(total / pageSize)
+        };
 
         return program;
     }
