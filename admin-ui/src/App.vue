@@ -2,9 +2,55 @@
   <el-container class="layout-container">
     <el-header>
       <div class="header-content">
+        <!-- 左侧标题和菜单按钮 -->
         <div class="header-left">
           <h2>年会节目管理系统</h2>
-          
+        </div>
+
+        <!-- 中间的导航菜单（PC端） -->
+        <div v-if="!isMobile && isLoggedIn" class="nav-menu">
+          <router-link 
+            to="/programs" 
+            class="nav-item"
+            :class="{ active: $route.path === '/programs' }"
+          >
+            节目列表
+          </router-link>
+          <router-link 
+            v-if="isAdmin" 
+            to="/users" 
+            class="nav-item"
+            :class="{ active: $route.path === '/users' }"
+          >
+            用户管理
+          </router-link>
+          <router-link 
+            v-if="isAdmin" 
+            to="/admin-token" 
+            class="nav-item"
+            :class="{ active: $route.path === '/admin-token' }"
+          >
+            Token 管理
+          </router-link>
+          <router-link 
+            v-if="isAdmin" 
+            to="/admin/big-screen" 
+            class="nav-item"
+            :class="{ active: $route.path === '/admin/big-screen' }"
+          >
+            大屏展示
+          </router-link>
+          <router-link 
+            to="/profile" 
+            class="nav-item"
+            :class="{ active: $route.path === '/profile' }"
+          >
+            个人信息
+          </router-link>
+        </div>
+
+        <!-- 右侧操作区 -->
+        <div class="header-right">
           <!-- 移动端汉堡菜单按钮 -->
           <el-button
             v-if="isMobile && isLoggedIn"
@@ -14,51 +60,16 @@
             <i :class="showMobileMenu ? 'el-icon-close' : 'el-icon-menu'"></i>
           </el-button>
 
-          <!-- PC端导航菜单 -->
-          <div v-if="!isMobile && isLoggedIn" class="nav-menu">
-            <router-link 
-              to="/programs" 
-              class="nav-item"
-              :class="{ active: $route.path === '/programs' }"
-            >
-              节目列表
-            </router-link>
-            <router-link 
-              v-if="isAdmin" 
-              to="/users" 
-              class="nav-item"
-              :class="{ active: $route.path === '/users' }"
-            >
-              用户管理
-            </router-link>
-            <router-link 
-              v-if="isAdmin" 
-              to="/admin-token" 
-              class="nav-item"
-              :class="{ active: $route.path === '/admin-token' }"
-            >
-              Token 管理
-            </router-link>
-            <router-link 
-              v-if="isAdmin" 
-              to="/admin/big-screen" 
-              class="nav-item"
-              :class="{ active: $route.path === '/admin/big-screen' }"
-            >
-              大屏展示
-            </router-link>
-            <router-link 
-              to="/profile" 
-              class="nav-item"
-              :class="{ active: $route.path === '/profile' }"
-            >
-              个人信息
-            </router-link>
-          </div>
+          <!-- 退出按钮 -->
+          <el-button 
+            v-if="isLoggedIn" 
+            @click="logout" 
+            type="danger" 
+            size="small"
+          >
+            退出登录
+          </el-button>
         </div>
-        <el-button v-if="isLoggedIn" @click="logout" type="danger" size="small">
-          退出登录
-        </el-button>
       </div>
 
       <!-- 移动端折叠菜单 -->
@@ -202,13 +213,18 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 0 20px;
+  height: 100%;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 20px;
-  flex: 1;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .el-header {
@@ -243,31 +259,29 @@ export default {
 @media (max-width: 768px) {
   .header-content {
     padding: 0 15px;
-    flex-direction: row;
-    height: 60px;
-  }
-  
-  .header-left {
-    flex-direction: row;
-    gap: 10px;
-    align-items: center;
   }
 
   h2 {
     font-size: 16px;
     margin: 0;
     white-space: nowrap;
-    flex: 1;
   }
 
   .nav-menu {
     display: none;
   }
+
+  .header-right {
+    gap: 5px;
+  }
+
+  .menu-toggle {
+    padding: 5px;
+  }
 }
 
 .menu-toggle {
   padding: 7px;
-  margin-left: auto;
   background: transparent;
   border: none;
   color: white;
