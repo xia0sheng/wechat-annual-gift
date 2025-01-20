@@ -586,7 +586,16 @@ export default {
             
             this._showGiftEffect({
               senderAvatar: data.senderAvatar,
+              realName: data.realName || data.sender,
+              programName: data.programName,  // 确保这个字段存在
+              giftCount: data.giftCount
+            });
+            
+            // 调试日志
+            console.log('[BigScreen] Gift animation data:', {
+              sender: data.sender,
               realName: data.realName,
+              programName: data.programName,
               giftCount: data.giftCount
             });
             

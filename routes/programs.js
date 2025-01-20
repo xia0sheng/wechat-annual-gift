@@ -112,9 +112,7 @@ router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
 router.post('/:id/gift', authMiddleware, async (req, res) => {
     try {
         console.log('\n[Gift Route] ====== Start Gift Process ======');
-        console.log(`[Gift Route] Program ID: ${req.params.id}, User ID: ${req.user.id}`);
         const { rockets } = req.body;
-        console.log(`[Gift Route] Rockets count: ${rockets}`);
         
         // 获取完整的用户信息
         const [[user]] = await pool.query(`
@@ -122,52 +120,37 @@ router.post('/:id/gift', authMiddleware, async (req, res) => {
             FROM users 
             WHERE id = ?
         `, [req.user.id]);
-        console.log('[Gift Route] User info:', {
-            id: user.id,
-            nickname: user.nickname,
-            real_name: user.real_name,
-            current_rockets: user.current_rockets
-        });
 
+        // 获取节目信息
         const program = await Program.findById(req.params.id);
-        console.log('[Gift Route] Program info:', {
-            id: program.id,
-            name: program.name,
-            current_total_rockets: program.total_rockets
-        });
+        if (!program) {
+            throw new Error('节目不存在');
+        }
 
         // 更新火箭数量
-        console.log('[Gift Route] Starting transaction for rocket gift...');
         await Program.giftRocket(req.params.id, req.user.id, rockets);
-        console.log('[Gift Route] Transaction completed successfully');
 
         // 广播礼物消息
-        console.log('[Gift Route] Preparing to broadcast gift message...');
         const giftData = {
             type: 'gift',
             sender: user.nickname,
             senderAvatar: user.headimgurl,
             realName: user.real_name || user.nickname,
-            programName: program.name,
+            programName: program.name,  // 添加节目名称
             giftType: 'rocket',
             giftCount: rockets,
             timestamp: Date.now()
         };
-        console.log('[Gift Route] Gift data prepared:', giftData);
         
+        console.log('[Gift Route] Gift data prepared:', giftData);
         broadcastGift(giftData);
-        console.log('[Gift Route] Broadcast completed');
 
-        console.log('[Gift Route] ====== End Gift Process ======\n');
         res.json({
             success: true,
             message: '赠送成功'
         });
     } catch (error) {
-        console.error('[Gift Route] ====== Error in Gift Process ======');
-        console.error('[Gift Route] Error details:', error);
-        console.error('[Gift Route] Stack:', error.stack);
-        console.error('[Gift Route] ====== End Error ======\n');
+        console.error('[Gift Route] Error:', error);
         res.status(500).json({
             success: false,
             message: error.message || '赠送火箭失败'
