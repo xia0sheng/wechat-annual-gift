@@ -117,7 +117,7 @@
 </template>
 
 <script>
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 
@@ -241,37 +241,24 @@ export default {
 /* 响应式设计 */
 @media (max-width: 768px) {
   .header-content {
-    flex-direction: column;
-    padding: 10px;
+    padding: 0 15px;
+    flex-direction: row;
   }
-
+  
   .header-left {
-    flex-direction: column;
+    flex-direction: row;
     gap: 10px;
-    width: 100%;
-  }
-
-  .nav-menu {
-    flex-direction: column;
-    width: 100%;
-    gap: 5px;
-  }
-
-  .nav-item {
-    display: block;
-    padding: 8px 15px;
-    text-align: center;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-  }
-
-  .el-header {
-    height: auto !important;
-    line-height: normal;
+    flex: 1;
   }
 
   h2 {
-    margin: 10px 0;
+    font-size: 18px;
+    margin: 0;
+    white-space: nowrap;
+  }
+
+  .nav-menu {
+    display: none;
   }
 }
 
@@ -281,15 +268,18 @@ export default {
   background: transparent;
   border: none;
   color: white;
+  font-size: 20px;
 }
 
-.menu-toggle:hover {
+.menu-toggle:hover,
+.menu-toggle:focus {
   background: rgba(255, 255, 255, 0.1);
+  color: white;
 }
 
 .mobile-menu {
   position: absolute;
-  top: 100%;
+  top: 60px;
   left: 0;
   right: 0;
   background-color: #409EFF;
@@ -313,22 +303,10 @@ export default {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* 移动端适配 */
 @media (max-width: 768px) {
-  .header-content {
-    padding: 0 15px;
-  }
-  
-  h2 {
-    font-size: 18px;
-    margin: 0;
-  }
-  
-  .header-left {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
+  .el-button--small {
+    padding: 8px 15px;
+    margin-left: 10px;
   }
 }
 
