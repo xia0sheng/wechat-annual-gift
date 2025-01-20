@@ -7,7 +7,7 @@
           
           <!-- 移动端汉堡菜单按钮 -->
           <el-button
-            v-if="isMobile"
+            v-if="isMobile && isLoggedIn"
             class="menu-toggle"
             @click="showMobileMenu = !showMobileMenu"
           >
@@ -208,6 +208,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 20px;
+  flex: 1;
 }
 
 .el-header {
@@ -243,18 +244,20 @@ export default {
   .header-content {
     padding: 0 15px;
     flex-direction: row;
+    height: 60px;
   }
   
   .header-left {
     flex-direction: row;
     gap: 10px;
-    flex: 1;
+    align-items: center;
   }
 
   h2 {
-    font-size: 18px;
+    font-size: 16px;
     margin: 0;
     white-space: nowrap;
+    flex: 1;
   }
 
   .nav-menu {
@@ -264,7 +267,7 @@ export default {
 
 .menu-toggle {
   padding: 7px;
-  margin-left: 15px;
+  margin-left: auto;
   background: transparent;
   border: none;
   color: white;
