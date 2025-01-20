@@ -63,12 +63,10 @@
             v-if="isMobile && isLoggedIn"
             class="menu-toggle"
             @click="showMobileMenu = !showMobileMenu"
-            style="z-index: 1000;"
           >
-            {{ showMobileMenu ? '关闭' : '菜单' }}
+            <span class="menu-icon">☰</span>
           </el-button>
 
-          <!-- 退出按钮 -->
           <el-button 
             v-if="isLoggedIn" 
             @click="logout" 
@@ -364,33 +362,64 @@ export default {
   .header-content {
     padding: 0 15px;
     height: 60px;
+    position: relative;
+  }
+
+  .header-left {
+    flex: 1;
   }
 
   .header-right {
-    position: relative;
-    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
   .menu-toggle {
-    display: flex !important;
+    display: inline-flex !important;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
-    margin-right: 10px;
-    background: rgba(255, 255, 255, 0.1) !important;
-    border-radius: 4px;
+    width: 36px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background-color: transparent !important;
+  }
+
+  .menu-icon {
+    font-size: 24px;
+    color: white;
+    line-height: 1;
+  }
+
+  .el-button--small {
+    height: 36px;
+    padding: 0 12px;
   }
 
   .mobile-menu {
-    position: fixed;
+    position: absolute;
     top: 60px;
     left: 0;
     right: 0;
     background-color: #409EFF;
-    padding: 10px;
-    box-shadow: 0 2px 12px 0 rgba(0,0,0,.1);
-    z-index: 999;
+    padding: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .mobile-nav-item {
+    display: block;
+    padding: 12px 16px;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    margin: 4px 0;
+  }
+
+  .mobile-nav-item:active {
+    background-color: rgba(255, 255, 255, 0.2);
   }
 }
 </style> 
