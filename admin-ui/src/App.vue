@@ -1,6 +1,13 @@
 <template>
   <el-container class="layout-container">
     <el-header>
+      <!-- 添加调试信息 -->
+      <div style="position: fixed; top: 0; left: 0; background: rgba(0,0,0,0.5); color: white; padding: 5px; font-size: 12px; z-index: 9999;">
+        isMobile: {{ isMobile }}<br>
+        isLoggedIn: {{ isLoggedIn }}<br>
+        showMobileMenu: {{ showMobileMenu }}
+      </div>
+
       <div class="header-content">
         <!-- 左侧标题和菜单按钮 -->
         <div class="header-left">
@@ -56,8 +63,9 @@
             v-if="isMobile && isLoggedIn"
             class="menu-toggle"
             @click="showMobileMenu = !showMobileMenu"
+            style="z-index: 1000;"
           >
-            <i :class="showMobileMenu ? 'el-icon-close' : 'el-icon-menu'"></i>
+            {{ showMobileMenu ? '关闭' : '菜单' }}
           </el-button>
 
           <!-- 退出按钮 -->
@@ -168,14 +176,26 @@ export default {
     const isMobile = ref(false)
     const showMobileMenu = ref(false)
     
-    // 检测设备类型
+    // 修改检测设备类型的方法
     const checkMobile = () => {
-      isMobile.value = window.innerWidth <= 768
+      const width = window.innerWidth
+      isMobile.value = width <= 768
+      console.log('Window width:', width, 'isMobile:', isMobile.value)
     }
     
     onMounted(() => {
+      // 立即检查一次
       checkMobile()
-      window.addEventListener('resize', checkMobile)
+      
+      // 添加调试日志
+      console.log('Initial check - isMobile:', isMobile.value)
+      
+      // 添加 resize 监听
+      window.addEventListener('resize', () => {
+        checkMobile()
+        console.log('Resize event - isMobile:', isMobile.value)
+      })
+      
       axios.interceptors.response.use(
         response => response,
         error => {
@@ -337,5 +357,40 @@ export default {
 .slide-fade-leave-to {
   transform: translateY(-20px);
   opacity: 0;
+}
+
+/* 确保移动端样式正确应用 */
+@media screen and (max-width: 768px) {
+  .header-content {
+    padding: 0 15px;
+    height: 60px;
+  }
+
+  .header-right {
+    position: relative;
+    z-index: 1000;
+  }
+
+  .menu-toggle {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    margin-right: 10px;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 4px;
+  }
+
+  .mobile-menu {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    background-color: #409EFF;
+    padding: 10px;
+    box-shadow: 0 2px 12px 0 rgba(0,0,0,.1);
+    z-index: 999;
+  }
 }
 </style> 
