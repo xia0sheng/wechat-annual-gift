@@ -1,13 +1,6 @@
 <template>
   <el-container class="layout-container">
     <el-header>
-      <!-- 添加调试信息 -->
-      <div style="position: fixed; top: 0; left: 0; background: rgba(0,0,0,0.5); color: white; padding: 5px; font-size: 12px; z-index: 9999;">
-        isMobile: {{ isMobile }}<br>
-        isLoggedIn: {{ isLoggedIn }}<br>
-        showMobileMenu: {{ showMobileMenu }}
-      </div>
-
       <div class="header-content">
         <!-- 左侧标题和菜单按钮 -->
         <div class="header-left">
@@ -178,20 +171,14 @@ export default {
     const checkMobile = () => {
       const width = window.innerWidth
       isMobile.value = width <= 768
-      console.log('Window width:', width, 'isMobile:', isMobile.value)
     }
     
     onMounted(() => {
       // 立即检查一次
       checkMobile()
       
-      // 添加调试日志
-      console.log('Initial check - isMobile:', isMobile.value)
-      
-      // 添加 resize 监听
       window.addEventListener('resize', () => {
         checkMobile()
-        console.log('Resize event - isMobile:', isMobile.value)
       })
       
       axios.interceptors.response.use(
