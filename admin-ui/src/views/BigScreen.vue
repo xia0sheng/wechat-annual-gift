@@ -144,7 +144,7 @@
                   <div class="gift-content">
                     <span class="sender">{{ giftData.realName }}</span>
                     <div class="gift-text">
-                      送出了 
+                      为 <span class="program-name">{{ giftData.programName }}</span> 送出了 
                       <span class="gift-icon">🚀</span>
                       <span class="gift-count">×{{ giftData.giftCount }}</span>
                     </div>
@@ -1076,12 +1076,18 @@ export default {
   font-size: 16px;
 }
 
+.program-name {
+  color: #ffd700;
+  font-weight: bold;
+}
+
 .gift-text {
   color: #fff;
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 14px;
+  white-space: nowrap;
 }
 
 .gift-icon {
